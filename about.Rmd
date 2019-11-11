@@ -1,0 +1,15 @@
+---
+title: "About Me"
+author: "Dustin Bracy"
+date: "11/10/2019"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+<div style="width:100px; height:200px">
+![Dustin Bracy](./img/Dustin Bracy.jpg)
+</div>
