@@ -1,7 +1,5 @@
 ---
 title: "About Me"
-author: "Dustin Bracy"
-date: "11/10/2019"
 output: html_document
 editor_options: 
   chunk_output_type: console
@@ -10,6 +8,45 @@ editor_options:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
-<div style="width:100px; height:200px">
-![Dustin Bracy](./img/Dustin Bracy.jpg)
-</div>
+---
+
+### My Story
+I currently work at Gilsbar as a Senior Business Analyst and Team Leader of IT's Project Management Office.  I live in Madisonville, LA with my wife and two children.  I am from Iowa originally, where I grew up in the country and went to school at a very small school (~200 total in my high school).  I spent 7 years on active duty in the Marine Corps, and another 3 in the reserve.  I love videogames, coding, learning and working with data.  I am a car and motorcycle enthusiast, DIY weekend warrior, tinkerer and most recently: an aspring data scientist.  
+
+---
+
+### My Education
+|Degree/Program|School|Location|Years|
+|----|----|----|----|
+|M.S. Data Science | Southern Methodist Univeristy | Dallas, TX | 2019-2021 |
+|Black Belt - Lean Six Sigma | Villanova Univeristy | Villanova, PA | 2016-2017 |
+|B.A. Computer Information Systems | Central College | Pella, IA | 2005-2008 |
+
+--- 
+
+### My Skillset[^1] 
+* **Hard-to-teach Skills:**
+  + Excellent leadership ability
+  + Strong communication and presentation skills
+  + Outside the box problem solving
+  + Extracting business use cases from data analysis
+  + Strong business acumen
+  + Solid understanding of statistics
+
+* **Industry Know-how:**
+  + Machine Learning, AI, predictive modeling
+  + Data visualization skills
+  + Relational database design
+  + Data mining and ETL techniques
+  + Process improvement methodologies
+  + Project management experience
+  
+* **Coding Wizardry:**
+  + Highly proficient in SQL
+  + Very comfortable in R
+  + Capable in SAS
+  + Capable in Python
+  + Comfortable with Javascript
+  + Dabble in C# and Java
+
+[^1]: My full work history and experience may be found on [LinkedIn](https://www.linkedin.com/in/dustin-bracy/) 
