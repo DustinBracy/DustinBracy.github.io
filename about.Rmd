@@ -1,6 +1,8 @@
 ---
 title: "About Me"
-output: html_document
+output: 
+  html_document:
+    theme: 'spacelab'
 editor_options: 
   chunk_output_type: console
 ---
@@ -22,7 +24,7 @@ I currently work at Gilsbar as a Senior Business Analyst and Team Leader of IT's
 |Black Belt - Lean Six Sigma | Villanova Univeristy | Villanova, PA | 2016-2017 |
 |B.A. Computer Information Systems | Central College | Pella, IA | 2005-2008 |
 
---- 
+---  
 
 ### My Skillset[^1] 
 * **Hard-to-teach Skills:**

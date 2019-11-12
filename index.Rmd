@@ -1,7 +1,8 @@
 ---
 title: "Welcome!"
 output: 
-  html_document
+  html_document:
+    theme: 'spacelab'
 editor_options: 
   chunk_output_type: console
 ---
@@ -9,7 +10,7 @@ editor_options:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
-#### My name is Dustin Bracy and this is a site collection I built entirely in R to challenge myself and showcase some of my work. Please feel free to look around: get a feel for my CV in 'About Me' or check out some of my portfolio items in the other tabs.
+##### My name is Dustin Bracy and this is a site collection I built entirely in R to challenge myself and showcase some of my work. Please feel free to look around: get a feel for my CV in 'About Me' or check out some of my portfolio items in the other tabs.
 
 ![\^ This is me sans beard. (Man, I clean up nice! :)](./img/Dustin Bracy.jpg){#id .class width=25% height=25%}
 
@@ -17,3 +18,4 @@ knitr::opts_chunk$set(echo = TRUE)
 * [GitHub](https://github.com/DustinBracy)  
 * [LinkedIn](https://www.linkedin.com/in/dustin-bracy/)  
 * [Twitter](https://twitter.com/DustinBracy)  
+

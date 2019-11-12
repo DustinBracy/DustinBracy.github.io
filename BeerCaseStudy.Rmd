@@ -2,7 +2,9 @@
 title: "Beer: A 'Case' Study"
 author: "Dustin Bracy and Tazeb Abera"
 date: "10/26/2019"
-output: html_document
+output: 
+  html_document:
+    theme: 'spacelab'
 editor_options: 
   chunk_output_type: console
 ---
@@ -17,7 +19,7 @@ The initial data provided were in two separate datasets, one each for beers and 
 
 ### Repository Structure
 
-For Repository files, please see our [`Github`](https://github.com/tazeb6531/Project_one/blob/master/BeerCaseStudy.Rproj}  
+For Repository files, please see our [`Github`](https://github.com/tazeb6531/Project_one/blob/master/BeerCaseStudy.Rproj)  
 
 * [`ReadMe.md`](https://github.com/tazeb6531/Project_one/blob/master/Readme.md): This is the base page for the repository, containing an introduction as well as our codebook for how we coded variable names throughout the datasets.
 
