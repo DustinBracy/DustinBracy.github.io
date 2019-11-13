@@ -1,5 +1,5 @@
 library(shiny)
-library(rsconnect)
+#library(rsconnect)
 
 # Define server logic required to draw a histogram ----
 server <- function(input, output) {
@@ -12,19 +12,48 @@ server <- function(input, output) {
   # 1. It is "reactive" and therefore should be automatically
   #    re-executed when inputs (input$bins) change
   # 2. Its output type is a plot
-  output$distPlot <- renderPlot({
+  
+  #require file
+ # req(input$file)
+  #Get beer data
+  output$value <- renderPrint({
+    str(input$file)
+  })
+  
+  beerdata <- reactive({
+    beerdata <- input$file
+    if (is.null(beerdata)){
+      return(NULL)
+    }
+    return(read.csv(input$file$datapath, header=T))
+  })
+  
+  output$contents <- renderTable(beerdata)
+  
+  output$IBUplot <- renderPlot({
     
     x    <- faithful$waiting
-    bins <- seq(min(x), max(x), length.out = input$bins + 1)
+    IBUbins <- seq(min(x), max(x), length.out = input$IBUbins + 1)
     
-    hist(x, breaks = bins, col = "#75AADB", border = "white",
+    hist(x, breaks = IBUbins, col = "#75AADB", border = "white",
          xlab = "Waiting time to next eruption (in mins)",
          main = "Histogram of waiting times")
     
   })
   
+  output$ABVplot <- renderPlot({
+    
+    x    <- faithful$waiting
+    ABVbins <- seq(min(x), max(x), length.out = input$ABVbins + 1)
+    
+    hist(x, breaks = ABVbins, col = "#75AADB", border = "white",
+         xlab = "Waiting time to next eruption (in mins)",
+         main = "Histogram of waiting times")
+    
+  })
 }
-deployApp()
+#deployApp()
 
 #shinyApp(ui, server)
+
 
