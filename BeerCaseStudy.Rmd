@@ -6,7 +6,7 @@ output:
   html_document:
     theme: 'spacelab'
 editor_options: 
-  chunk_output_type: console
+  chunk_output_type: inline
 ---
 
 ## A Case Study of US Craft Beer and Breweries
@@ -113,6 +113,14 @@ Brewdata <- rename(Brewdata, Beer = Name.x, Brewery = Name.y, OZ = Ounces)
 
 #Convert OZ to factor
 Brewdata$OZ = as.factor(Brewdata$OZ)
+
+beer <- Brewdata %>% filter(!is.na(IBU) & !is.na(ABV) & !is.na(Style))
+ggplot(beer, aes(x=state, y=ABV)) + geom_boxplot(fill= "#75AADB")
+write.csv(beer, "beer.csv")
+
+
+beer %>% filter(state %in% c('AZ'))
+
 ```
 
 ### 2b. Check the first and last 6 observations to verify the merged file.
@@ -529,11 +537,25 @@ hchart(Top10Breweries, "column", hcaes(x = Brewery, y = Beers)) %>%
   hc_title(text = "Top 10 Breweries with Most Original Beers") %>%
   hc_add_theme(hc_theme_economist())
 
+
+  #  TopBreweries <- Brewdata %>% mutate(Brewery = paste0(Brewery,'<br>', City, ', ', state)) %>% 
+  #  group_by(Brewery) %>% summarise(Beers = n()) %>% arrange(desc(Beers))
+   # ggplot(data=Brewdata, mapping=aes(x=Brewery, y=Beers)) + geom_col() + theme_economist() + 
+   # labs(title = "Top 10 Breweries with Most Original Beers")
+
 ```
 
 ### Visualization of our additional research!
 ```{r section 9 display plots}
 htmltools::tagList(charts)
+
+
+ #   TopBreweries <- Brewdata %>% mutate(Brewery = paste0(Brewery,'\n', City, ', ', state)) %>% 
+  #  group_by(Brewery) %>% summarise(Beers = n()) %>% arrange(desc(Beers)) %>% top_n(10)
+  #  ggplot(data=TopBreweries, mapping=aes(x=Brewery, y=Beers)) + geom_col(color="white",fill="steelblue") +
+  #    theme_economist()  +labs(title = "Top 10 Breweries with Most Original Beers") +
+   #   theme(axis.text.x = element_text(angle = 60, vjust=1, hjust=1))
+  
 
 ```
 
