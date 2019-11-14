@@ -324,6 +324,9 @@ $(document).ready(function () {
 <li>
   <a href="BeerCaseStudy.html">Beer Case Study</a>
 </li>
+<li>
+  <a href="https://dustinbracy.shinyapps.io/dustinbracygithub/">Beer Shiny Apps</a>
+</li>
       </ul>
       <ul class="nav navbar-nav navbar-right">
         
@@ -789,7 +792,29 @@ Brewdata &lt;- full_join(Beers, Breweries, by=&quot;Brew_ID&quot;)
 Brewdata &lt;- rename(Brewdata, Beer = Name.x, Brewery = Name.y, OZ = Ounces)
 
 #Convert OZ to factor
-Brewdata$OZ = as.factor(Brewdata$OZ)</code></pre>
+Brewdata$OZ = as.factor(Brewdata$OZ)
+
+beer &lt;- Brewdata %&gt;% filter(!is.na(IBU) &amp; !is.na(ABV) &amp; !is.na(Style))
+ggplot(beer, aes(x=state, y=ABV)) + geom_boxplot(fill= &quot;#75AADB&quot;)</code></pre>
+<p><img src="BeerCaseStudy_files/figure-html/unnamed-chunk-3-1.png" width="672" /></p>
+<pre class="r"><code>write.csv(beer, &quot;beer.csv&quot;)
+
+
+beer %&gt;% filter(state %in% c(&#39;AZ&#39;))</code></pre>
+<pre><code>## # A tibble: 23 x 10
+##    Beer      Beer_ID   ABV   IBU Brew_ID Style   OZ    Brewery  City  state
+##    &lt;chr&gt;       &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;   &lt;dbl&gt; &lt;chr&gt;   &lt;fct&gt; &lt;chr&gt;    &lt;chr&gt; &lt;chr&gt;
+##  1 Barrio B~    2005 0.06     60     252 Americ~ 12    Barrio ~ Tucs~ AZ   
+##  2 Noche Du~    2062 0.071    16     232 Americ~ 16    Borderl~ Tucs~ AZ   
+##  3 Sunbru K~    2309 0.052    17     161 Kölsch  12    Four Pe~ Tempe AZ   
+##  4 Four Pea~    1585 0.042     9     161 Fruit ~ 12    Four Pe~ Tempe AZ   
+##  5 Hop Knot~     358 0.067    47     161 Americ~ 12    Four Pe~ Tempe AZ   
+##  6 Kilt Lif~     179 0.06     21     161 Scotti~ 12    Four Pe~ Tempe AZ   
+##  7 Lumberya~    1153 0.053    20     159 Americ~ 12    Lumbery~ Flag~ AZ   
+##  8 Camelback    2312 0.061    60     158 Americ~ 12    Phoenix~ Phoe~ AZ   
+##  9 Sex Pant~    2599 0.069    20      31 Americ~ 12    SanTan ~ Chan~ AZ   
+## 10 Winter W~    2073 0.095    25      31 Winter~ 16    SanTan ~ Chan~ AZ   
+## # ... with 13 more rows</code></pre>
 </div>
 <div id="b.-check-the-first-and-last-6-observations-to-verify-the-merged-file." class="section level3">
 <h3>2b. Check the first and last 6 observations to verify the merged file.</h3>
@@ -1874,7 +1899,13 @@ hchart(Top10Cities, &quot;column&quot;, hcaes(x = City, y = Breweries)) %&gt;%
 charts[[&#39;top10byBrewery&#39;]] &lt;-
 hchart(Top10Breweries, &quot;column&quot;, hcaes(x = Brewery, y = Beers)) %&gt;% 
   hc_title(text = &quot;Top 10 Breweries with Most Original Beers&quot;) %&gt;%
-  hc_add_theme(hc_theme_economist())</code></pre>
+  hc_add_theme(hc_theme_economist())
+
+
+  #  TopBreweries &lt;- Brewdata %&gt;% mutate(Brewery = paste0(Brewery,&#39;&lt;br&gt;&#39;, City, &#39;, &#39;, state)) %&gt;% 
+  #  group_by(Brewery) %&gt;% summarise(Beers = n()) %&gt;% arrange(desc(Beers))
+   # ggplot(data=Brewdata, mapping=aes(x=Brewery, y=Beers)) + geom_col() + theme_economist() + 
+   # labs(title = &quot;Top 10 Breweries with Most Original Beers&quot;)</code></pre>
 </div>
 </div>
 <div id="visualization-of-our-additional-research" class="section level3">
@@ -1888,6 +1919,11 @@ hchart(Top10Breweries, &quot;column&quot;, hcaes(x = Brewery, y = Beers)) %&gt;%
 <script type="application/json" data-for="htmlwidget-dbcba23a1890e9a58233">{"x":{"hc_opts":{"title":{"text":"Top 10 Cities with Most Breweries"},"yAxis":{"title":{"text":"Breweries"},"type":"linear"},"credits":{"enabled":false},"exporting":{"enabled":false},"plotOptions":{"series":{"label":{"enabled":false},"turboThreshold":0,"showInLegend":false},"treemap":{"layoutAlgorithm":"squarified"},"scatter":{"marker":{"symbol":"circle"}}},"series":[{"group":"group","data":[{"City":"Grand Rapids, MI","Breweries":66,"y":66,"name":"Grand Rapids, MI"},{"City":"Chicago, IL","Breweries":55,"y":55,"name":"Chicago, IL"},{"City":"Portland, OR","Breweries":52,"y":52,"name":"Portland, OR"},{"City":"Indianapolis, IN","Breweries":43,"y":43,"name":"Indianapolis, IN"},{"City":"San Diego, CA","Breweries":42,"y":42,"name":"San Diego, CA"},{"City":"Boulder, CO","Breweries":41,"y":41,"name":"Boulder, CO"},{"City":"Denver, CO","Breweries":40,"y":40,"name":"Denver, CO"},{"City":"Brooklyn, NY","Breweries":38,"y":38,"name":"Brooklyn, NY"},{"City":"Seattle, WA","Breweries":35,"y":35,"name":"Seattle, WA"},{"City":"San Francisco, CA","Breweries":32,"y":32,"name":"San Francisco, CA"}],"type":"column"}],"xAxis":{"type":"category","title":{"text":"City"},"categories":null}},"theme":{"colors":["#6794a7","#014d64","#76c0c1","#01a2d9","#7ad2f6","#00887d","#adadad","#7bd3f6","#7c260b","#ee8f71","#76c0c1","#a18376"],"chart":{"backgroundColor":"#d5e4eb","style":{"fontFamily":"Droid Sans","color":"#3C3C3C"}},"title":{"align":"left","style":{"fontWeight":"bold"}},"subtitle":{"align":"left"},"yAxis":{"gridLineColor":"#FFFFFF","lineColor":"#FFFFFF","minorGridLineColor":"#FFFFFF","tickColor":"#D7D7D8","tickWidth":1,"title":{"style":{"color":"#A0A0A3"}}},"tooltip":{"backgroundColor":"#FFFFFF","borderColor":"#76c0c1","style":{"color":"#000000"}},"legend":{"itemStyle":{"color":"#3C3C3C"},"itemHiddenStyle":{"color":"#606063"}},"credits":{"style":{"color":"#666"}},"labels":{"style":{"color":"#D7D7D8"}},"drilldown":{"activeAxisLabelStyle":{"color":"#F0F0F3"},"activeDataLabelStyle":{"color":"#F0F0F3"}},"navigation":{"buttonOptions":{"symbolStroke":"#DDDDDD","theme":{"fill":"#505053"}}},"legendBackgroundColor":"rgba(0, 0, 0, 0.5)","background2":"#505053","dataLabelsColor":"#B0B0B3","textColor":"#C0C0C0","contrastTextColor":"#F0F0F3","maskColor":"rgba(255,255,255,0.3)"},"conf_opts":{"global":{"Date":null,"VMLRadialGradientURL":"http =//code.highcharts.com/list(version)/gfx/vml-radial-gradient.png","canvasToolsURL":"http =//code.highcharts.com/list(version)/modules/canvas-tools.js","getTimezoneOffset":null,"timezoneOffset":0,"useUTC":true},"lang":{"contextButtonTitle":"Chart context menu","decimalPoint":".","downloadJPEG":"Download JPEG image","downloadPDF":"Download PDF document","downloadPNG":"Download PNG image","downloadSVG":"Download SVG vector image","drillUpText":"Back to {series.name}","invalidDate":null,"loading":"Loading...","months":["January","February","March","April","May","June","July","August","September","October","November","December"],"noData":"No data to display","numericSymbols":["k","M","G","T","P","E"],"printChart":"Print chart","resetZoom":"Reset zoom","resetZoomTitle":"Reset zoom level 1:1","shortMonths":["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"],"thousandsSep":" ","weekdays":["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"]}},"type":"chart","fonts":"Droid+Sans","debug":false},"evals":[],"jsHooks":[]}</script>
 <div id="htmlwidget-1f1b4a096fca5bae7b7c" style="width:100%;height:500px;" class="highchart html-widget"></div>
 <script type="application/json" data-for="htmlwidget-1f1b4a096fca5bae7b7c">{"x":{"hc_opts":{"title":{"text":"Top 10 Breweries with Most Original Beers"},"yAxis":{"title":{"text":"Beers"},"type":"linear"},"credits":{"enabled":false},"exporting":{"enabled":false},"plotOptions":{"series":{"label":{"enabled":false},"turboThreshold":0,"showInLegend":false},"treemap":{"layoutAlgorithm":"squarified"},"scatter":{"marker":{"symbol":"circle"}}},"series":[{"group":"group","data":[{"Brewery":"Brewery Vivant<br>Grand Rapids, MI","Beers":62,"y":62,"name":"Brewery Vivant<br>Grand Rapids, MI"},{"Brewery":"Sun King Brewing Company<br>Indianapolis, IN","Beers":38,"y":38,"name":"Sun King Brewing Company<br>Indianapolis, IN"},{"Brewery":"Oskar Blues Brewery<br>Longmont, CO","Beers":31,"y":31,"name":"Oskar Blues Brewery<br>Longmont, CO"},{"Brewery":"Cigar City Brewing Company<br>Tampa, FL","Beers":25,"y":25,"name":"Cigar City Brewing Company<br>Tampa, FL"},{"Brewery":"Sixpoint Craft Ales<br>Brooklyn, NY","Beers":24,"y":24,"name":"Sixpoint Craft Ales<br>Brooklyn, NY"},{"Brewery":"Hopworks Urban Brewery<br>Portland, OR","Beers":23,"y":23,"name":"Hopworks Urban Brewery<br>Portland, OR"},{"Brewery":"Stevens Point Brewery<br>Stevens Point, WI","Beers":22,"y":22,"name":"Stevens Point Brewery<br>Stevens Point, WI"},{"Brewery":"21st Amendment Brewery<br>San Francisco, CA","Beers":20,"y":20,"name":"21st Amendment Brewery<br>San Francisco, CA"},{"Brewery":"Great Crescent Brewery<br>Aurora, IN","Beers":20,"y":20,"name":"Great Crescent Brewery<br>Aurora, IN"},{"Brewery":"Bonfire Brewing Company<br>Eagle, CO","Beers":19,"y":19,"name":"Bonfire Brewing Company<br>Eagle, CO"},{"Brewery":"SanTan Brewing Company<br>Chandler, AZ","Beers":19,"y":19,"name":"SanTan Brewing Company<br>Chandler, AZ"}],"type":"column"}],"xAxis":{"type":"category","title":{"text":"Brewery"},"categories":null}},"theme":{"colors":["#6794a7","#014d64","#76c0c1","#01a2d9","#7ad2f6","#00887d","#adadad","#7bd3f6","#7c260b","#ee8f71","#76c0c1","#a18376"],"chart":{"backgroundColor":"#d5e4eb","style":{"fontFamily":"Droid Sans","color":"#3C3C3C"}},"title":{"align":"left","style":{"fontWeight":"bold"}},"subtitle":{"align":"left"},"yAxis":{"gridLineColor":"#FFFFFF","lineColor":"#FFFFFF","minorGridLineColor":"#FFFFFF","tickColor":"#D7D7D8","tickWidth":1,"title":{"style":{"color":"#A0A0A3"}}},"tooltip":{"backgroundColor":"#FFFFFF","borderColor":"#76c0c1","style":{"color":"#000000"}},"legend":{"itemStyle":{"color":"#3C3C3C"},"itemHiddenStyle":{"color":"#606063"}},"credits":{"style":{"color":"#666"}},"labels":{"style":{"color":"#D7D7D8"}},"drilldown":{"activeAxisLabelStyle":{"color":"#F0F0F3"},"activeDataLabelStyle":{"color":"#F0F0F3"}},"navigation":{"buttonOptions":{"symbolStroke":"#DDDDDD","theme":{"fill":"#505053"}}},"legendBackgroundColor":"rgba(0, 0, 0, 0.5)","background2":"#505053","dataLabelsColor":"#B0B0B3","textColor":"#C0C0C0","contrastTextColor":"#F0F0F3","maskColor":"rgba(255,255,255,0.3)"},"conf_opts":{"global":{"Date":null,"VMLRadialGradientURL":"http =//code.highcharts.com/list(version)/gfx/vml-radial-gradient.png","canvasToolsURL":"http =//code.highcharts.com/list(version)/modules/canvas-tools.js","getTimezoneOffset":null,"timezoneOffset":0,"useUTC":true},"lang":{"contextButtonTitle":"Chart context menu","decimalPoint":".","downloadJPEG":"Download JPEG image","downloadPDF":"Download PDF document","downloadPNG":"Download PNG image","downloadSVG":"Download SVG vector image","drillUpText":"Back to {series.name}","invalidDate":null,"loading":"Loading...","months":["January","February","March","April","May","June","July","August","September","October","November","December"],"noData":"No data to display","numericSymbols":["k","M","G","T","P","E"],"printChart":"Print chart","resetZoom":"Reset zoom","resetZoomTitle":"Reset zoom level 1:1","shortMonths":["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"],"thousandsSep":" ","weekdays":["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"]}},"type":"chart","fonts":"Droid+Sans","debug":false},"evals":[],"jsHooks":[]}</script><</p>
+<pre class="r"><code> #   TopBreweries &lt;- Brewdata %&gt;% mutate(Brewery = paste0(Brewery,&#39;\n&#39;, City, &#39;, &#39;, state)) %&gt;% 
+  #  group_by(Brewery) %&gt;% summarise(Beers = n()) %&gt;% arrange(desc(Beers)) %&gt;% top_n(10)
+  #  ggplot(data=TopBreweries, mapping=aes(x=Brewery, y=Beers)) + geom_col(color=&quot;white&quot;,fill=&quot;steelblue&quot;) +
+  #    theme_economist()  +labs(title = &quot;Top 10 Breweries with Most Original Beers&quot;) +
+   #   theme(axis.text.x = element_text(angle = 60, vjust=1, hjust=1))</code></pre>
 </div>
 </div>
 

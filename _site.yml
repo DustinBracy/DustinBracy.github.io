@@ -9,3 +9,5 @@ navbar:
       href: about.html
     - text: "Beer Case Study"
       href: BeerCaseStudy.html
+    - text: "Beer Shiny Apps"
+      href: https://dustinbracy.shinyapps.io/dustinbracygithub/

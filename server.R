@@ -148,11 +148,10 @@ server <- function(input, output) {
       theme_classic() +
       ggtitle("Top 10 Breweries with Most Original Beers") +
       theme(axis.text.x = element_text(angle = 60, vjust=1, hjust=1))
-
-  
   })
+
 }
 
-deployApp()
+#deployApp()
 
 #shinyApp(ui, server)
