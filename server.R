@@ -29,6 +29,15 @@ server <- function(input, output) {
     str(input$BeerFile)
   })
   
+  # Downloadable csv of beers dataset ----
+  output$downloadData <- downloadHandler(
+    filename = "beer.csv",
+    content = function(file) {
+      beerdata <- read.csv("./data/beer.csv", header=T)
+      Brewdata <- beerdata %>% filter(!is.na(IBU) & !is.na(ABV) & !is.na(Style))
+      write.csv(Brewdata, file, row.names = FALSE)
+    }
+  )
   #output$PlotTypeValue <- renderPrint({str(input$RadioPlotType)})
   
   #output$states <-renderPrint(input$states)

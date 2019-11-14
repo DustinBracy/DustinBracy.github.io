@@ -12,7 +12,9 @@ ui <- fluidPage(
     
     # Sidebar panel for inputs ----
     sidebarPanel(
-     
+      # Button
+      downloadButton("downloadData", "Download Beer Data"),
+      
        # Read Beer File:
       fileInput("BeerFile", label = h3("Upload Beer Data")),
      
