@@ -1,10 +1,11 @@
 library(shiny)
 library(shinyjs)
 library(rsconnect)
+
 ui <- fluidPage(
   useShinyjs(),
   # App title ----
-  titlePanel("Hello Shiny!"),
+  titlePanel("Shiny Beer!"),
   
   # Sidebar layout with input and output definitions ----
   sidebarLayout(
