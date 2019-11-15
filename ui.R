@@ -65,8 +65,8 @@ ui <- fluidPage(
       plotOutput(outputId = "ABVplot"),
       plotOutput(outputId = "ScatterPlot"),
       plotOutput(outputId = "CityPlot"),
-      plotOutput(outputId = "BrewPlot")
-      #tableOutput("FileContents")
+      plotOutput(outputId = "BrewPlot"),
+      tableOutput("FileContents")
     )
   )
 )
