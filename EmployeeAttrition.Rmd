@@ -1,0 +1,586 @@
+---
+title: "Employee Attrition Data Analysis"
+author: "Dustin Bracy"
+date: "12/05/2019"
+output: 
+  html_document:
+    code_folding: hide
+    theme: 'spacelab'
+
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(kableExtra)
+library(corrplot)
+library(class) #knn
+library(caret) 
+library(olsrr) #residual plot analysis
+library(e1071) #naive bayes
+library(fastNaiveBayes)
+library(GGally)
+library(ggthemes)
+library(gridExtra)
+library(readxl)
+
+theme_set(theme_calc())
+
+```
+#### Abstract:
+DDSAnalytics is an analytics company that specializes in talent management solutions for Fortune 100 companies.  Talent management is the iterative process of developing and retaining employees.  To gain a competitive edge over its competition, DDSAnalytics is planning to leverage data science for talent management.  The executive leadership has identified predicting employee turnover as its first application of data science for talent management.  Before the business green lights the project, they have tasked my data science team to conduct an analysis of existing employee data. 
+
+[`Watch me (quickly) present these findings on YouTube!`](https://youtu.be/lQce2woLHkA)
+
+#### Objectives:
+* Identify the top three factors that contribute to employee attrition (backed up by evidence provided by data analysis).  
+* Identify job and/or role specific trends. 
+* Identify useful factors related to talent management (e.g. workforce planning, employee training, identifying high potential employees, reducing turnover).
+* Present findings via YouTube in 7 minutes or less.
+
+#### Target Audience:  
+* Client CEO and CFO  
+* CEO is statistician, CFO has had only one class in statistics  
+
+#### Data Analysis & Findings:
+* training times last year indicates the number of training sessions attended
+* hourly/daily/monthly rates are unclear, possibly production rates 
+* Ordinal scales where used indicate 1 as low/worst, and 5 as high/best 
+* Performance ratings seem to indicate a fear of giving a low score (possible company culture issue)
+  + Only 3s and 4s were given, no 1 or 2s
+* SalesRepresentatives have the highest attrition rate, and Directors have the lowest
+* Job Level, Total Working Years, and Years at Company have the most impact on Monthly Income
+* Overtime, no stock options, and employees in low level jobs (level 1) are the biggest drivers of attrition
+* Employees making less that $5,000 per month have the highest attrition rates
+* Employees under 30 are more likely to leave their jobs
+* Employees with less than 5 years at a company or 5 total working years are more likely to leave
+
+#### Import & Validate data:
+A simple sum of missing values returns 0, which means this dataset is clean and we can start our EDA!
+
+## Exploratory Data Analysis
+
+In Exploratory Data Analysis (EDA), we're looking for correlation among 36 original features. We are primarily looking for features that we can use to predict attrition in the workplace. 
+
+```{r import/tidy, message=FALSE}
+data <- read.csv("./data/CaseStudy2-data.csv", header=T)
+#data <- read.csv("./data/CaseStudy2CompSet No Attrition.csv", header=T)
+oData <- data # Save original dataset
+
+# Check for missing values:
+MissingValues <- sapply(data, function(x) sum(is.na(x)))
+sum(MissingValues)
+
+# One-hot encode categorical variables:
+data$Attrition <- ifelse(data$Attrition == "Yes",1,0)
+data$OverTime <- ifelse(data$OverTime == "Yes",1,0)
+data$Gender <- ifelse(data$Gender == "Male",1,0)
+data$BusinessTravel <- as.numeric(factor(data$BusinessTravel, 
+                                         levels=c("Non-Travel", "Travel_Rarely", "Travel_Frequently"))) -1
+data$HumanResources <- ifelse(data$Department == "Human Resources",1,0)
+data$ResearchDevelopment <- ifelse(data$Department == "Research & Development",1,0)
+data$Sales <- ifelse(data$Department == "Sales",1,0)
+data$Single <- ifelse(data$MaritalStatus == "Single",1,0)
+data$Married <- ifelse(data$MaritalStatus == "Married",1,0)
+data$Divorced <- ifelse(data$MaritalStatus == "Divorced",1,0)
+data$EdHumanResources <- ifelse(data$EducationField == "Human Resources",1,0)
+data$EdLifeSciences <- ifelse(data$EducationField == "Life Sciences",1,0)
+data$EdMedical <- ifelse(data$EducationField == "Medical",1,0)
+data$EdMarketing <- ifelse(data$EducationField == "Marketing",1,0)
+data$EdTechnicalDegree <- ifelse(data$EducationField == "Technical Degree",1,0)
+data$EdOther <- ifelse(data$EducationField == "Other",1,0)
+data$JobSalesExecutive <- ifelse(data$JobRole == "Sales Executive",1,0)
+data$JobResearchDirector <- ifelse(data$JobRole == "Research Director",1,0)
+data$JobManufacturingDirector <- ifelse(data$JobRole == "Manufacturing Director",1,0)
+data$JobResearchScientist <- ifelse(data$JobRole == "Research Scientist",1,0)
+data$JobSalesExecutive <- ifelse(data$JobRole == "Sales Executive",1,0)
+data$JobSalesRepresentative <- ifelse(data$JobRole == "Sales Representative",1,0)
+data$JobManager <- ifelse(data$JobRole == "Manager",1,0)
+data$JobHealthcareRepresentative <- ifelse(data$JobRole == "Healthcare Representative",1,0)
+data$JobHumanResources <- ifelse(data$JobRole == "Human Resources",1,0)
+data$JobLaboratoryTechnician <- ifelse(data$JobRole == "Laboratory Technician",1,0)
+
+
+
+
+
+```
+
+#### Continuous Data:
+
+```{r EDA Continuous, warning=FALSE, message=FALSE, fig.align="center"}
+
+# Visualize continuous data:
+pIncome <- data %>% ggplot(aes(MonthlyIncome, Attrition)) + geom_smooth() 
+pDistance <- data %>% ggplot(aes(DistanceFromHome, Attrition)) + geom_smooth()
+pSalaryHike <- data %>% ggplot(aes(PercentSalaryHike, Attrition)) + geom_smooth()
+pCompanies <- data %>% ggplot(aes(NumCompaniesWorked, Attrition)) + geom_smooth()
+pDaily <- data %>% ggplot(aes(DailyRate, Attrition)) + geom_smooth() 
+pHourly <- data %>% ggplot(aes(HourlyRate, Attrition)) + geom_smooth()
+pMonthly <- data %>% ggplot(aes(MonthlyRate, Attrition)) + geom_smooth()
+pAge <- data %>% ggplot(aes(Age, Attrition)) + geom_smooth()
+pYearsCompany <- data %>% ggplot(aes(YearsAtCompany, Attrition)) + geom_smooth()
+pYearsRole <- data %>% ggplot(aes(YearsInCurrentRole, Attrition)) + geom_smooth()
+pPromotion <- data %>% ggplot(aes(YearsSinceLastPromotion, Attrition)) + geom_smooth()
+pYearsManager <- data %>% ggplot(aes(YearsWithCurrManager, Attrition)) + geom_smooth()
+pYearsWorking <- data %>% ggplot(aes(TotalWorkingYears, Attrition)) + geom_smooth()
+grid.arrange(pIncome,pDistance,pSalaryHike,pCompanies,pDaily,pHourly,pMonthly,pAge,pYearsCompany,pYearsRole,pPromotion,pYearsManager,pYearsWorking, ncol=4, nrow=4)
+```
+
+#### Ordinal Data:
+
+```{r EDA Ordinal, warning=FALSE, message=FALSE, fig.align="center"}
+
+# Visualize ordinal data:
+pJobSat <- data %>% ggplot(aes(JobSatisfaction, Attrition)) + geom_smooth()
+pJobLevel <- data %>% ggplot(aes(JobLevel, Attrition)) + geom_smooth()
+pJobInvolvement <- data %>% ggplot(aes(JobInvolvement, Attrition)) + geom_smooth()
+pTraining <- data %>% ggplot(aes(TrainingTimesLastYear, Attrition)) + geom_smooth()
+pStock <- data %>% ggplot(aes(StockOptionLevel, Attrition)) + geom_smooth()
+pTravel <- data %>% ggplot(aes(BusinessTravel, Attrition)) + geom_smooth()
+pEducation <- data %>% ggplot(aes(Education, Attrition)) + geom_smooth()
+pRelationship <- data %>% ggplot(aes(RelationshipSatisfaction, Attrition)) + geom_smooth()
+pWorkLife <- data %>% ggplot(aes(WorkLifeBalance, Attrition)) + geom_smooth()
+grid.arrange(pJobSat,pJobLevel,pJobInvolvement,pTraining,pStock,pTravel,pEducation,pRelationship,pWorkLife, ncol=3, nrow=3)
+
+```
+
+#### Categorical Data:
+
+```{r EDA Categorical, warning=FALSE, message=FALSE, fig.align="center"}
+
+# Visualize categorical data:
+pAttrition <- oData %>% group_by(Attrition) %>% summarise(count = n()) %>% 
+    mutate(Percent = (count / sum(count))*100) %>% 
+    ggplot() + geom_bar(aes(y=Percent, x=Attrition, fill=Attrition), stat = "identity")
+pDept <- oData %>% ggplot(aes(Department, fill=Attrition)) + geom_bar()  + coord_flip()
+pMarital <- oData %>% ggplot(aes(MaritalStatus, fill=Attrition)) + geom_bar()
+pGender <- oData %>% ggplot(aes(Gender, fill=Attrition)) + geom_bar()
+grid.arrange(pAttrition, pDept, pMarital,pGender, ncol=2, nrow=2)
+
+oData %>% ggplot(aes(JobRole, fill=Attrition)) + geom_bar() + coord_flip() + coord_flip() +  labs(title="Attrition by Job Role", y="Employees")
+oData %>% ggplot(aes(EducationField)) + geom_bar(aes(fill=Attrition))  + coord_flip() + labs(title="Attrition by Educational Field", y="Employees")
+
+```
+
+## Feature Engineering
+Feature engineering is designed to improve correlation by combining like type features, or slicing the data into distinct populations.  I am going to use it to binary encode the categorical data to allow me to use Logistical Regression and improve performance in the KNN algorithm while predicting employee attrition and salary.
+
+```{r feature engineering}
+
+# binary encode ordinal variables 
+data$LessThan5k <- ifelse(data$MonthlyIncome < 5000, 1, 0)
+data$NewWorker <- ifelse(data$NumCompaniesWorked <=1, 1, 0)
+data$LowLevel <- ifelse(data$JobLevel == 1, 1, 0)
+data$NewHire <- ifelse(data$YearsAtCompany <4, 1, 0)
+data$WorkedOver30 <- ifelse(data$TotalWorkingYears >=30, 1, 0)
+data$Uninvolved <- ifelse(data$JobInvolvement <2, 1, 0)
+data$NewToRole <- ifelse(data$YearsInCurrentRole <=1, 1, 0)
+data$Unbalanced <- ifelse(data$WorkLifeBalance <2, 1, 0)
+data$SalaryHike <- ifelse(data$PercentSalaryHike  >20, 1, 0)
+data$HighlySatisfied <- ifelse(data$JobSatisfaction == 4, 1, 0)
+data$LongCommute <- ifelse(data$DistanceFromHome >= 15, 1, 0)
+data$AgeUnder40 <- ifelse(data$Age <40, 1, 0)
+data$DueForPromotion <- ifelse(!data$YearsSinceLastPromotion %in% c(1,5,6,7), 1, 0)
+data$TopPerformer <- ifelse(data$PerformanceRating == 4, 1, 0)
+data$NoStock <- ifelse(data$StockOptionLevel < 1, 1 , 0)
+data$NoTraining <- ifelse(data$TrainingTimesLastYear < 1, 1, 0)
+data$HourlyOver40 <- ifelse(data$HourlyRate > 40, 1, 0)
+data$MonthlyOver15k <- ifelse(data$MonthlyRate > 15000, 1, 0)
+data$LogIncome <- log(data$MonthlyIncome)
+data$SqIncome <- data$MonthlyIncome^2
+data$SqRtIncome <- sqrt(data$MonthlyIncome)
+
+
+# drop factors for regression analysis
+rdata <- subset(data, select = -c(Over18, Department, JobRole, MaritalStatus, EducationField, EmployeeCount, StandardHours))
+
+# scale numerics 0-1 to improve KNN performance
+kdata <- data.frame(apply(rdata, MARGIN = 2, FUN = function(X) (X - min(X))/diff(range(X))))
+
+# set the test/train split
+splitPerc <- .7 
+
+```
+
+## Correlation Analysis
+Here we are looking to see improvement gained from feature engineering and to ensure we select features which have high correlation with our response variables (i.e. Income/Attrition) for use in our machine learning algorthims.
+
+<center>
+
+![Correlation Plot of all Rdata features](./figures/CorrPlot.png) 
+
+</center>
+
+```{r determine correlation, warning=FALSE, message=FALSE, fig.align="center"}
+data.cor <- cor(rdata)
+cdata <- data.cor[,c('Attrition','MonthlyIncome')]
+cdata <- data.frame(rbind(names(cdata),cdata))
+cdata <- tibble::rownames_to_column(cdata, "Feature")
+IncomeCorrelation <- cdata %>% select(Feature, MonthlyIncome) %>% filter(!Feature %in% c('MonthlyIncome',"LogIncome","SqIncome","SqRtIncome")) %>% arrange(abs(MonthlyIncome))
+
+AttritionCorrelation <- cdata %>% select(Feature, Attrition) %>% arrange(abs(Attrition)) %>% filter(Feature != 'Attrition' )
+AttritionCorrelation$Feature <- as.factor(AttritionCorrelation$Feature)
+
+```
+
+
+```{r build Plots, include=FALSE}
+#& !(str_detect(Feature, 'Job'))
+
+# mat : is a matrix of data
+# ... : further arguments to pass to the native R cor.test function
+cor.mtest <- function(mat, ...) {
+    mat <- as.matrix(mat)
+    n <- ncol(mat)
+    p.mat<- matrix(NA, n, n)
+    diag(p.mat) <- 0
+    for (i in 1:(n - 1)) {
+        for (j in (i + 1):n) {
+            tmp <- cor.test(mat[, i], mat[, j], ...)
+            p.mat[i, j] <- p.mat[j, i] <- tmp$p.value
+        }
+    }
+  colnames(p.mat) <- rownames(p.mat) <- colnames(mat)
+  p.mat
+}
+# matrix of the p-value of the correlation
+p.mat <- cor.mtest(rdata)
+
+col <- colorRampPalette(c("#BB4444", "#EE9988", "#FFFFFF", "#77AADD", "#4477AA"))
+
+# Build corrNums.png
+png(height=1200, width=1500, pointsize=8, file="./figures/corrNums.png")
+corrplot(data.cor, method="color", col=col(200),  
+         type="upper", order="hclust", 
+         addCoef.col = "black", # Add coefficient of correlation
+         tl.col="black", tl.srt=45, #Text label color and rotation
+         # Combine with significance
+         p.mat = p.mat, sig.level = 0.01, insig = "blank", tl.cex = 1.25,
+         # hide correlation coefficient on the principal diagonal
+         diag=FALSE 
+         )
+ggsave("./figures/corrNums.png", units="in", width=5, height=4, dpi=600)
+dev.off()
+
+# Build corrPlot.png
+png(height=1200, width=1800, pointsize=15, file="./figures/corrPlot.png")
+corrplot(data.cor, method="circle", order="hclust",tl.col="black", type="full", tl.cex = 1, p.mat = p.mat, sig.level = 0.01, insig = "blank")
+ggsave("./figures/corrPlot.png", units="in", width=5, height=4, dpi=600)
+dev.off()
+
+# Build corrMixed.png
+png(height=1200, width=1500, pointsize=10, file="./figures/corrMixed.png")
+corrplot.mixed(round(100*data.cor), number.cex = .75, tl.cex = 1, tl.pos = "lt",tl.col="black", is.corr=F)
+ggsave("./figures/corrMixed.png", units="in", width=5, height=4, dpi=600)
+dev.off()
+
+```
+
+
+
+```{r view correlation, message=FALSE, fig.align="center"}
+
+IncomeCorrelation %>% top_n(10) %>% mutate(Feature = factor(Feature, Feature)) %>%
+  ggplot(aes(Feature,MonthlyIncome, fill=Feature)) + 
+  geom_col() + labs(title="Top 10 Monthly Income Drivers") + coord_flip() + 
+  scale_fill_discrete(guide = guide_legend(reverse=TRUE))
+
+AttritionCorrelation  %>% top_n(10) %>% mutate(Feature = factor(Feature, Feature)) %>%
+  ggplot(aes(Feature,Attrition, fill=Feature)) + geom_col() + 
+  labs(title="Top 10 Attrition Drivers") + coord_flip() + 
+  scale_fill_discrete(guide = guide_legend(reverse=TRUE))
+
+# View correlation for KNN prediction:
+data %>% select(
+  'Attrition',
+  "JobSatisfaction",
+  "OverTime",
+  "WorkLifeBalance",
+  "JobInvolvement",
+  "NewHire",
+  "DueForPromotion",
+  "NoStock",
+  "DistanceFromHome",
+  "MonthlyIncome"
+  ) %>% ggpairs(title = "Correlation for Attrition using KNN Features")
+
+# View correlation plots for salary regression:
+data %>% select(
+   'MonthlyIncome',
+   'JobLevel',
+   'TotalWorkingYears',
+   'JobRole'
+   ) %>% ggpairs(title = "Correlation for Monthly Income using Linear Regression Features")
+
+```
+
+
+## Using K Nearest Neighbors (KNN) to predict employee attrition
+
+First we need to determine the best value of K to use for KNN.  We use 50 iterations of tests across all 35 values of K (120% of the square root of the size of the dataset) to find the max useful value of K and the average of its performance statistics.
+
+```{r KNN attrition}
+
+iterations = 50
+set.seed(7)
+numks = round(sqrt(dim(kdata)[1])*1.2)
+masterAcc = matrix(nrow = iterations, ncol = numks)
+masterSpec = matrix(nrow = iterations, ncol = numks)
+masterSen = matrix(nrow = iterations, ncol = numks)
+knnArray <- c("JobSatisfaction",
+              "OverTime",
+              "WorkLifeBalance",
+              "JobInvolvement",
+              "NewHire",
+              "DueForPromotion",
+              "NoStock",
+              "DistanceFromHome",
+              "MonthlyIncome"
+              )
+
+for(j in 1:iterations) {
+  # resample data
+  trainIndices = sample(1:dim(kdata)[1],round(splitPerc * dim(kdata)[1]))
+  train = kdata[trainIndices,]
+  test = kdata[-trainIndices,]
+  for(i in 1:numks) {
+    # predict using i-th value of k
+    classifications = knn(train[,knnArray],test[,knnArray],as.factor(train$Attrition), prob = TRUE, k = i)
+    CM = confusionMatrix(table(as.factor(test$Attrition),classifications, dnn = c("Prediction", "Reference")), positive = '1')
+    masterAcc[j,i] = CM$overall[1]
+    masterSen[j,i] = CM$byClass[1]
+    masterSpec[j,i] = ifelse(is.na(CM$byClass[2]),0,CM$byClass[2])
+
+  }
+}
+
+MeanAcc <- colMeans(masterAcc)
+MeanSen <- colMeans(masterSen)
+MeanSpec <- colMeans(masterSpec)
+plot(seq(1,numks), MeanAcc, main="K value determination", xlab="Value of K")
+k <- which.max(MeanAcc)
+specs <- c(MeanAcc[k],MeanSen[k],MeanSpec[k])
+names(specs) <- c("Avg Accuracy", "Avg Sensitivity", "Avg Specificity")
+specs %>% kable("html") %>% kable_styling 
+
+
+
+classifications = knn(train[,knnArray],test[,knnArray],as.factor(train$Attrition), prob = TRUE, k = k)
+confusionMatrix(table(test$Attrition,classifications, dnn = c("Prediction", "Reference")), positive = '1')
+
+
+```
+
+## Using Naive Bayes to predict employee attrition
+
+Naive Bayes uses 100 iterations to find an average performance statistics. 
+
+```{r Naive Bayes attrition}
+
+iterations = 100
+set.seed(7)
+masterAcc = matrix(nrow = iterations)
+masterSpec = matrix(nrow = iterations)
+masterSen = matrix(nrow = iterations)
+
+nbArray <- c("HighlySatisfied", 
+             "OverTime", 
+             "LowLevel", 
+             "Unbalanced",
+             "WorkedOver30",
+             "JobInvolvement",
+             "SalaryHike", 
+             "NewHire", 
+             "NewToRole",
+             "AgeUnder40",
+             "DueForPromotion",
+             "TopPerformer", 
+             "NoStock",
+             "MaritalStatus", 
+             "LogIncome",
+             "MonthlyOver15k", 
+             "HourlyOver40")
+
+nbArray <- knnArray
+
+for(j in 1:iterations)
+{
+  
+  trainIndices = sample(1:dim(data)[1],round(splitPerc * dim(data)[1]))
+  train = data[trainIndices,]
+  test = data[-trainIndices,]
+  model = naiveBayes(train[,nbArray],as.factor(train$Attrition),laplace = .0001)
+  CM = confusionMatrix(table(predict(model,test[,nbArray]),as.factor(test$Attrition), dnn = c("Prediction", "Reference")), positive = '1')
+  masterAcc[j] = CM$overall[1]
+  masterSen[j] = CM$byClass[1]
+  masterSpec[j] = CM$byClass[2]
+
+}
+specs <- c(colMeans(masterAcc),colMeans(masterSen),colMeans(masterSpec))
+names(specs) <- c("Avg Accuracy", "Avg Sensitivity", "Avg Specificity")
+specs %>% kable("html") %>% kable_styling 
+
+confusionMatrix(table(predict(model,test[,nbArray]),as.factor(test$Attrition), dnn = c("Prediction", "Reference")), positive = '1')
+
+
+```
+
+## Using Fast Naive Bayes to predict employee attrition
+The Fast Naive Bayes method below uses 100 iterations to find average performance statistics using only binary features. 
+
+```{r Fast Naive Bayes attrition}
+
+iterations = 100
+set.seed(7)
+masterAcc2 = matrix(nrow = iterations)
+masterSpec2 = matrix(nrow = iterations)
+masterSen2 = matrix(nrow = iterations)
+
+nbArray2 <- c("OverTime", 
+              "LowLevel",
+              "HighlySatisfied",
+              "Unbalanced",
+              "WorkedOver30",
+              "SalaryHike", 
+              "NewHire",
+              "NewToRole", 
+              "AgeUnder40",
+              "DueForPromotion",
+              "TopPerformer",
+              "NoStock",
+              "Gender",
+              "Uninvolved", 
+              "Single",
+              "Divorced",
+              "Married",
+              "LongCommute",
+              "NoTraining",
+              "HourlyOver40",
+              "MonthlyOver15k",
+              "JobManager",
+              "JobSalesExecutive", 
+              "JobSalesRepresentative")
+
+for(j in 1:iterations)
+{
+  
+  trainIndices = sample(1:dim(rdata)[1],round(splitPerc * dim(rdata)[1]))
+  train2 = rdata[trainIndices,]
+  test2 = rdata[-trainIndices,]
+  model2 = fnb.bernoulli(train2[,nbArray2], train2$Attrition, laplace = .0001)
+  CM2 = confusionMatrix(table(predict(model2,test2[,nbArray2]),as.factor(test2$Attrition), dnn = c("Prediction", "Reference")), positive = '1')
+  masterAcc2[j] = CM2$overall[1]
+  masterSen2[j] = CM2$byClass[1]
+  masterSpec2[j] = CM2$byClass[2]
+}
+specs <- c(colMeans(masterAcc2),colMeans(masterSen2),colMeans(masterSpec2))
+names(specs) <- c("Avg Accuracy", "Avg Sensitivity", "Avg Specificity")
+specs %>% kable("html") %>% kable_styling 
+
+confusionMatrix(table(predict(model2,test2[,nbArray2]),as.factor(test2$Attrition), dnn = c("Prediction", "Reference")), positive = '1')
+
+
+```
+
+## Using Logistic Regression to predict employee attrition
+
+```{r logistic regression}
+set.seed(7)
+trainIndices = sample(1:dim(data)[1],round(splitPerc * dim(data)[1]))
+train = data[trainIndices,]
+test = data[-trainIndices,]
+model3 <- glm(Attrition ~ JobSatisfaction + 
+                OverTime + 
+                WorkLifeBalance + 
+                JobInvolvement + 
+                NewHire + 
+                NoStock + 
+                BusinessTravel +
+                DistanceFromHome +
+                YearsSinceLastPromotion +
+                EnvironmentSatisfaction
+              , data=train, family="binomial")
+
+#HourlyRate+NewToRole +NumCompaniesWorked+LogIncome+JobRole
+summary(model3)
+atPrd <- predict(model3, type="response", newdata = test)
+actualPred <- ifelse(atPrd > 0.5, 1, 0)
+confusionMatrix(table(as.factor(actualPred), as.factor(test$Attrition), dnn = c("Prediction", "Reference")), positive = '1')
+
+
+```
+
+# Using Multiple Linear Regression to predict monthly income
+Multiple linear regression is sensitive to co-linearity of features.  Using the correlation matrix above, we determined the simplest model uses only JobLevel, TotalWorkingYears, and JobRole for prediction.  The TotalWorkingYears and JobLevel features are both highly significant (p-values <.0001) and have a large impact on the estimated salary regression line.
+
+The plot below the prediction summary validates the assumptions of linear regression are met.  The data appears normally distributed (as seen in the QQ Plot), the features are linearly correlated, there are no extreme outliers with high influence, and standard deviation among the plots is equal less a few outliers.  Transformation of the data did not help with the inequality of variance, so caution should be used when making inference on monthly salary, especially n the ~$5,000/month range. 
+
+```{r salary regression, fig.align="center"}
+set.seed(7)
+  trainIndices = sample(1:dim(rdata)[1],round(splitPerc * dim(rdata)[1]))
+  train = data[trainIndices,]
+  test = data[-trainIndices,]
+salFit <- lm(MonthlyIncome ~ 
+               JobLevel + 
+               TotalWorkingYears +
+               JobRole 
+             ,data=train)
+summary(salFit)
+
+salPrd <- predict(salFit, interval="predict",newdata = test)
+RMSE <- sqrt(mean((salPrd[,1] - test$MonthlyIncome)^2))
+RMSE
+
+olsrr::ols_plot_diagnostics(salFit)
+
+```
+
+```{r attrition prediction, include=FALSE}
+
+# AtCompData <- read.csv("./data/CaseStudy2CompSet No Attrition.csv", header=T)
+# 
+# AtCompData$NoStock <- ifelse(AtCompData$StockOptionLevel < 1, 1 , 0)
+# AtCompData$NewHire <- ifelse(AtCompData$YearsAtCompany <4, 1, 0)
+# AtCompData$DueForPromotion <- ifelse(!AtCompData$YearsSinceLastPromotion %in% c(1,5,6,7), 1, 0)
+# AtCompData$OverTime <- ifelse(AtCompData$OverTime == "Yes",1,0)
+# 
+# # drop factors for regression analysis
+# AtCompData <- subset(AtCompData, select = -c(Over18, Department, JobRole, MaritalStatus, EducationField, EmployeeCount, StandardHours, BusinessTravel, Gender))
+# 
+# # scale numerics 0-1 to improve KNN performance
+# AtCompDataIDs <- AtCompData$ID
+# AtCompData <- data.frame(apply(AtCompData, MARGIN = 2, FUN = function(X) (X - min(X))/diff(range(X))))
+# AtCompData$ID <- AtCompDataIDs
+# Atclassifications = knn(kdata[,knnArray],AtCompData[,knnArray],as.factor(kdata$Attrition), prob = TRUE, k = round(sqrt(dim(kdata)[1])))
+# 
+# AtPred <- data.frame(Atclassifications)
+# AtPred <- cbind(AtCompData$ID, AtPred)
+# names(AtPred) <- c("ID","Attrition")
+# AtPred$Attrition <- as.factor(ifelse(AtPred$Attrition == 0, 'No','Yes'))
+# 
+# write.csv(AtPred, file = "./data/Case2PredictionsBracy Attrition.csv", row.names = FALSE)
+
+```
+
+```{r salary prediction, include=FALSE}
+
+# SalCompData <- read_xlsx("./data/CaseStudy2CompSet No Salary.xlsx")
+# 
+# salCompFit <- lm(MonthlyIncome ~ 
+#                JobLevel + 
+#                TotalWorkingYears +
+#                JobRole 
+#              ,data=data)
+# summary(salCompFit)
+# 
+# salCompPrd <- predict(salCompFit, interval="predict",newdata = SalCompData)
+# 
+# salPrediction <- data.frame(cbind(SalCompData$ID, salCompPrd[,1]))
+# names(salPrediction) <- c("ID","MonthlyIncome")
+# 
+# write.csv(salPrediction, file = "./data/Case2PredictionsBracy Salary.csv", row.names = FALSE)
+
+```

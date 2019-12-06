@@ -1,0 +1,1068 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+
+<meta charset="utf-8" />
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+
+<meta name="author" content="Dustin Bracy" />
+
+<meta name="date" content="2019-12-05" />
+
+<title>Employee Attrition Data Analysis</title>
+
+<script src="site_libs/jquery-1.11.3/jquery.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="site_libs/bootstrap-3.3.5/css/spacelab.min.css" rel="stylesheet" />
+<script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
+<script src="site_libs/navigation-1.1/tabsets.js"></script>
+<script src="site_libs/navigation-1.1/codefolding.js"></script>
+<link href="site_libs/highlightjs-9.12.0/default.css" rel="stylesheet" />
+<script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
+<script src="site_libs/kePrint-0.0.1/kePrint.js"></script>
+
+<style type="text/css">code{white-space: pre;}</style>
+<style type="text/css">
+  pre:not([class]) {
+    background-color: white;
+  }
+</style>
+<script type="text/javascript">
+if (window.hljs) {
+  hljs.configure({languages: []});
+  hljs.initHighlightingOnLoad();
+  if (document.readyState && document.readyState === "complete") {
+    window.setTimeout(function() { hljs.initHighlighting(); }, 0);
+  }
+}
+</script>
+
+
+
+<style type="text/css">
+h1 {
+  font-size: 34px;
+}
+h1.title {
+  font-size: 38px;
+}
+h2 {
+  font-size: 30px;
+}
+h3 {
+  font-size: 24px;
+}
+h4 {
+  font-size: 18px;
+}
+h5 {
+  font-size: 16px;
+}
+h6 {
+  font-size: 12px;
+}
+.table th:not([align]) {
+  text-align: left;
+}
+</style>
+
+
+
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+code {
+  color: inherit;
+  background-color: rgba(0, 0, 0, 0.04);
+}
+img {
+  max-width:100%;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+.html-widget {
+  margin-bottom: 20px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+summary {
+  display: list-item;
+}
+</style>
+
+
+<style type="text/css">
+/* padding for bootstrap navbar */
+body {
+  padding-top: 52px;
+  padding-bottom: 40px;
+}
+/* offset scroll position for anchor links (for fixed navbar)  */
+.section h1 {
+  padding-top: 57px;
+  margin-top: -57px;
+}
+.section h2 {
+  padding-top: 57px;
+  margin-top: -57px;
+}
+.section h3 {
+  padding-top: 57px;
+  margin-top: -57px;
+}
+.section h4 {
+  padding-top: 57px;
+  margin-top: -57px;
+}
+.section h5 {
+  padding-top: 57px;
+  margin-top: -57px;
+}
+.section h6 {
+  padding-top: 57px;
+  margin-top: -57px;
+}
+.dropdown-submenu {
+  position: relative;
+}
+.dropdown-submenu>.dropdown-menu {
+  top: 0;
+  left: 100%;
+  margin-top: -6px;
+  margin-left: -1px;
+  border-radius: 0 6px 6px 6px;
+}
+.dropdown-submenu:hover>.dropdown-menu {
+  display: block;
+}
+.dropdown-submenu>a:after {
+  display: block;
+  content: " ";
+  float: right;
+  width: 0;
+  height: 0;
+  border-color: transparent;
+  border-style: solid;
+  border-width: 5px 0 5px 5px;
+  border-left-color: #cccccc;
+  margin-top: 5px;
+  margin-right: -10px;
+}
+.dropdown-submenu:hover>a:after {
+  border-left-color: #ffffff;
+}
+.dropdown-submenu.pull-left {
+  float: none;
+}
+.dropdown-submenu.pull-left>.dropdown-menu {
+  left: -100%;
+  margin-left: 10px;
+  border-radius: 6px 0 6px 6px;
+}
+</style>
+
+<script>
+// manage active state of menu based on current page
+$(document).ready(function () {
+  // active menu anchor
+  href = window.location.pathname
+  href = href.substr(href.lastIndexOf('/') + 1)
+  if (href === "")
+    href = "index.html";
+  var menuAnchor = $('a[href="' + href + '"]');
+
+  // mark it active
+  menuAnchor.parent().addClass('active');
+
+  // if it's got a parent navbar menu mark it active as well
+  menuAnchor.closest('li.dropdown').addClass('active');
+});
+</script>
+
+<!-- tabsets -->
+
+<style type="text/css">
+.tabset-dropdown > .nav-tabs {
+  display: inline-table;
+  max-height: 500px;
+  min-height: 44px;
+  overflow-y: auto;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.tabset-dropdown > .nav-tabs > li.active:before {
+  content: "";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li.active:before {
+  content: "&#xe258;";
+  border: none;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open:before {
+  content: "";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs > li.active {
+  display: block;
+}
+
+.tabset-dropdown > .nav-tabs > li > a,
+.tabset-dropdown > .nav-tabs > li > a:focus,
+.tabset-dropdown > .nav-tabs > li > a:hover {
+  border: none;
+  display: inline-block;
+  border-radius: 4px;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li {
+  display: block;
+  float: none;
+}
+
+.tabset-dropdown > .nav-tabs > li {
+  display: none;
+}
+</style>
+
+<!-- code folding -->
+<style type="text/css">
+.code-folding-btn { margin-bottom: 4px; }
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+<div class="container-fluid main-container">
+
+
+
+
+<div class="navbar navbar-default  navbar-fixed-top" role="navigation">
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="index.html">DustinBracy.github.io</a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse">
+      <ul class="nav navbar-nav">
+        <li>
+  <a href="index.html">Home</a>
+</li>
+<li>
+  <a href="about.html">About Me</a>
+</li>
+<li>
+  <a href="BeerCaseStudy.html">Beer Case Study</a>
+</li>
+<li>
+  <a href="EmployeeAttrition.html">Employee Attrition</a>
+</li>
+<li>
+  <a href="https://dustinbracy.shinyapps.io/dustinbracygithub/">Beer Shiny App</a>
+</li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        
+      </ul>
+    </div><!--/.nav-collapse -->
+  </div><!--/.container -->
+</div><!--/.navbar -->
+
+<div class="fluid-row" id="header">
+
+<div class="btn-group pull-right">
+<button type="button" class="btn btn-default btn-xs dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><span>Code</span> <span class="caret"></span></button>
+<ul class="dropdown-menu" style="min-width: 50px;">
+<li><a id="rmd-show-all-code" href="#">Show All Code</a></li>
+<li><a id="rmd-hide-all-code" href="#">Hide All Code</a></li>
+</ul>
+</div>
+
+
+
+<h1 class="title toc-ignore">Employee Attrition Data Analysis</h1>
+<h4 class="author">Dustin Bracy</h4>
+<h4 class="date">12/05/2019</h4>
+
+</div>
+
+
+<div id="abstract" class="section level4">
+<h4>Abstract:</h4>
+<p>DDSAnalytics is an analytics company that specializes in talent management solutions for Fortune 100 companies. Talent management is the iterative process of developing and retaining employees. To gain a competitive edge over its competition, DDSAnalytics is planning to leverage data science for talent management. The executive leadership has identified predicting employee turnover as its first application of data science for talent management. Before the business green lights the project, they have tasked my data science team to conduct an analysis of existing employee data.</p>
+<p><a href="https://youtu.be/lQce2woLHkA"><code>Watch me (quickly) present these findings on YouTube!</code></a></p>
+</div>
+<div id="objectives" class="section level4">
+<h4>Objectives:</h4>
+<ul>
+<li>Identify the top three factors that contribute to employee attrition (backed up by evidence provided by data analysis).<br />
+</li>
+<li>Identify job and/or role specific trends.</li>
+<li>Identify useful factors related to talent management (e.g. workforce planning, employee training, identifying high potential employees, reducing turnover).</li>
+<li>Present findings via YouTube in 7 minutes or less.</li>
+</ul>
+</div>
+<div id="target-audience" class="section level4">
+<h4>Target Audience:</h4>
+<ul>
+<li>Client CEO and CFO<br />
+</li>
+<li>CEO is statistician, CFO has had only one class in statistics</li>
+</ul>
+</div>
+<div id="data-analysis-findings" class="section level4">
+<h4>Data Analysis &amp; Findings:</h4>
+<ul>
+<li>training times last year indicates the number of training sessions attended</li>
+<li>hourly/daily/monthly rates are unclear, possibly production rates</li>
+<li>Ordinal scales where used indicate 1 as low/worst, and 5 as high/best</li>
+<li>Performance ratings seem to indicate a fear of giving a low score (possible company culture issue)
+<ul>
+<li>Only 3s and 4s were given, no 1 or 2s</li>
+</ul></li>
+<li>SalesRepresentatives have the highest attrition rate, and Directors have the lowest</li>
+<li>Job Level, Total Working Years, and Years at Company have the most impact on Monthly Income</li>
+<li>Overtime, no stock options, and employees in low level jobs (level 1) are the biggest drivers of attrition</li>
+<li>Employees making less that $5,000 per month have the highest attrition rates</li>
+<li>Employees under 30 are more likely to leave their jobs</li>
+<li>Employees with less than 5 years at a company or 5 total working years are more likely to leave</li>
+</ul>
+</div>
+<div id="import-validate-data" class="section level4">
+<h4>Import &amp; Validate data:</h4>
+<p>A simple sum of missing values returns 0, which means this dataset is clean and we can start our EDA!</p>
+</div>
+<div id="exploratory-data-analysis" class="section level2">
+<h2>Exploratory Data Analysis</h2>
+<p>In Exploratory Data Analysis (EDA), we’re looking for correlation among 36 original features. We are primarily looking for features that we can use to predict attrition in the workplace.</p>
+<pre class="r"><code>data &lt;- read.csv(&quot;./data/CaseStudy2-data.csv&quot;, header=T)
+#data &lt;- read.csv(&quot;./data/CaseStudy2CompSet No Attrition.csv&quot;, header=T)
+oData &lt;- data # Save original dataset
+
+# Check for missing values:
+MissingValues &lt;- sapply(data, function(x) sum(is.na(x)))
+sum(MissingValues)</code></pre>
+<pre><code>## [1] 0</code></pre>
+<pre class="r"><code># One-hot encode categorical variables:
+data$Attrition &lt;- ifelse(data$Attrition == &quot;Yes&quot;,1,0)
+data$OverTime &lt;- ifelse(data$OverTime == &quot;Yes&quot;,1,0)
+data$Gender &lt;- ifelse(data$Gender == &quot;Male&quot;,1,0)
+data$BusinessTravel &lt;- as.numeric(factor(data$BusinessTravel, 
+                                         levels=c(&quot;Non-Travel&quot;, &quot;Travel_Rarely&quot;, &quot;Travel_Frequently&quot;))) -1
+data$HumanResources &lt;- ifelse(data$Department == &quot;Human Resources&quot;,1,0)
+data$ResearchDevelopment &lt;- ifelse(data$Department == &quot;Research &amp; Development&quot;,1,0)
+data$Sales &lt;- ifelse(data$Department == &quot;Sales&quot;,1,0)
+data$Single &lt;- ifelse(data$MaritalStatus == &quot;Single&quot;,1,0)
+data$Married &lt;- ifelse(data$MaritalStatus == &quot;Married&quot;,1,0)
+data$Divorced &lt;- ifelse(data$MaritalStatus == &quot;Divorced&quot;,1,0)
+data$EdHumanResources &lt;- ifelse(data$EducationField == &quot;Human Resources&quot;,1,0)
+data$EdLifeSciences &lt;- ifelse(data$EducationField == &quot;Life Sciences&quot;,1,0)
+data$EdMedical &lt;- ifelse(data$EducationField == &quot;Medical&quot;,1,0)
+data$EdMarketing &lt;- ifelse(data$EducationField == &quot;Marketing&quot;,1,0)
+data$EdTechnicalDegree &lt;- ifelse(data$EducationField == &quot;Technical Degree&quot;,1,0)
+data$EdOther &lt;- ifelse(data$EducationField == &quot;Other&quot;,1,0)
+data$JobSalesExecutive &lt;- ifelse(data$JobRole == &quot;Sales Executive&quot;,1,0)
+data$JobResearchDirector &lt;- ifelse(data$JobRole == &quot;Research Director&quot;,1,0)
+data$JobManufacturingDirector &lt;- ifelse(data$JobRole == &quot;Manufacturing Director&quot;,1,0)
+data$JobResearchScientist &lt;- ifelse(data$JobRole == &quot;Research Scientist&quot;,1,0)
+data$JobSalesExecutive &lt;- ifelse(data$JobRole == &quot;Sales Executive&quot;,1,0)
+data$JobSalesRepresentative &lt;- ifelse(data$JobRole == &quot;Sales Representative&quot;,1,0)
+data$JobManager &lt;- ifelse(data$JobRole == &quot;Manager&quot;,1,0)
+data$JobHealthcareRepresentative &lt;- ifelse(data$JobRole == &quot;Healthcare Representative&quot;,1,0)
+data$JobHumanResources &lt;- ifelse(data$JobRole == &quot;Human Resources&quot;,1,0)
+data$JobLaboratoryTechnician &lt;- ifelse(data$JobRole == &quot;Laboratory Technician&quot;,1,0)</code></pre>
+<div id="continuous-data" class="section level4">
+<h4>Continuous Data:</h4>
+<pre class="r"><code># Visualize continuous data:
+pIncome &lt;- data %&gt;% ggplot(aes(MonthlyIncome, Attrition)) + geom_smooth() 
+pDistance &lt;- data %&gt;% ggplot(aes(DistanceFromHome, Attrition)) + geom_smooth()
+pSalaryHike &lt;- data %&gt;% ggplot(aes(PercentSalaryHike, Attrition)) + geom_smooth()
+pCompanies &lt;- data %&gt;% ggplot(aes(NumCompaniesWorked, Attrition)) + geom_smooth()
+pDaily &lt;- data %&gt;% ggplot(aes(DailyRate, Attrition)) + geom_smooth() 
+pHourly &lt;- data %&gt;% ggplot(aes(HourlyRate, Attrition)) + geom_smooth()
+pMonthly &lt;- data %&gt;% ggplot(aes(MonthlyRate, Attrition)) + geom_smooth()
+pAge &lt;- data %&gt;% ggplot(aes(Age, Attrition)) + geom_smooth()
+pYearsCompany &lt;- data %&gt;% ggplot(aes(YearsAtCompany, Attrition)) + geom_smooth()
+pYearsRole &lt;- data %&gt;% ggplot(aes(YearsInCurrentRole, Attrition)) + geom_smooth()
+pPromotion &lt;- data %&gt;% ggplot(aes(YearsSinceLastPromotion, Attrition)) + geom_smooth()
+pYearsManager &lt;- data %&gt;% ggplot(aes(YearsWithCurrManager, Attrition)) + geom_smooth()
+pYearsWorking &lt;- data %&gt;% ggplot(aes(TotalWorkingYears, Attrition)) + geom_smooth()
+grid.arrange(pIncome,pDistance,pSalaryHike,pCompanies,pDaily,pHourly,pMonthly,pAge,pYearsCompany,pYearsRole,pPromotion,pYearsManager,pYearsWorking, ncol=4, nrow=4)</code></pre>
+<p><img src="EmployeeAttrition_files/figure-html/EDA%20Continuous-1.png" width="672" style="display: block; margin: auto;" /></p>
+</div>
+<div id="ordinal-data" class="section level4">
+<h4>Ordinal Data:</h4>
+<pre class="r"><code># Visualize ordinal data:
+pJobSat &lt;- data %&gt;% ggplot(aes(JobSatisfaction, Attrition)) + geom_smooth()
+pJobLevel &lt;- data %&gt;% ggplot(aes(JobLevel, Attrition)) + geom_smooth()
+pJobInvolvement &lt;- data %&gt;% ggplot(aes(JobInvolvement, Attrition)) + geom_smooth()
+pTraining &lt;- data %&gt;% ggplot(aes(TrainingTimesLastYear, Attrition)) + geom_smooth()
+pStock &lt;- data %&gt;% ggplot(aes(StockOptionLevel, Attrition)) + geom_smooth()
+pTravel &lt;- data %&gt;% ggplot(aes(BusinessTravel, Attrition)) + geom_smooth()
+pEducation &lt;- data %&gt;% ggplot(aes(Education, Attrition)) + geom_smooth()
+pRelationship &lt;- data %&gt;% ggplot(aes(RelationshipSatisfaction, Attrition)) + geom_smooth()
+pWorkLife &lt;- data %&gt;% ggplot(aes(WorkLifeBalance, Attrition)) + geom_smooth()
+grid.arrange(pJobSat,pJobLevel,pJobInvolvement,pTraining,pStock,pTravel,pEducation,pRelationship,pWorkLife, ncol=3, nrow=3)</code></pre>
+<p><img src="EmployeeAttrition_files/figure-html/EDA%20Ordinal-1.png" width="672" style="display: block; margin: auto;" /></p>
+</div>
+<div id="categorical-data" class="section level4">
+<h4>Categorical Data:</h4>
+<pre class="r"><code># Visualize categorical data:
+pAttrition &lt;- oData %&gt;% group_by(Attrition) %&gt;% summarise(count = n()) %&gt;% 
+    mutate(Percent = (count / sum(count))*100) %&gt;% 
+    ggplot() + geom_bar(aes(y=Percent, x=Attrition, fill=Attrition), stat = &quot;identity&quot;)
+pDept &lt;- oData %&gt;% ggplot(aes(Department, fill=Attrition)) + geom_bar()  + coord_flip()
+pMarital &lt;- oData %&gt;% ggplot(aes(MaritalStatus, fill=Attrition)) + geom_bar()
+pGender &lt;- oData %&gt;% ggplot(aes(Gender, fill=Attrition)) + geom_bar()
+grid.arrange(pAttrition, pDept, pMarital,pGender, ncol=2, nrow=2)</code></pre>
+<p><img src="EmployeeAttrition_files/figure-html/EDA%20Categorical-1.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>oData %&gt;% ggplot(aes(JobRole, fill=Attrition)) + geom_bar() + coord_flip() + coord_flip() +  labs(title=&quot;Attrition by Job Role&quot;, y=&quot;Employees&quot;)</code></pre>
+<p><img src="EmployeeAttrition_files/figure-html/EDA%20Categorical-2.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>oData %&gt;% ggplot(aes(EducationField)) + geom_bar(aes(fill=Attrition))  + coord_flip() + labs(title=&quot;Attrition by Educational Field&quot;, y=&quot;Employees&quot;)</code></pre>
+<p><img src="EmployeeAttrition_files/figure-html/EDA%20Categorical-3.png" width="672" style="display: block; margin: auto;" /></p>
+</div>
+</div>
+<div id="feature-engineering" class="section level2">
+<h2>Feature Engineering</h2>
+<p>Feature engineering is designed to improve correlation by combining like type features, or slicing the data into distinct populations. I am going to use it to binary encode the categorical data to allow me to use Logistical Regression and improve performance in the KNN algorithm while predicting employee attrition and salary.</p>
+<pre class="r"><code># binary encode ordinal variables 
+data$LessThan5k &lt;- ifelse(data$MonthlyIncome &lt; 5000, 1, 0)
+data$NewWorker &lt;- ifelse(data$NumCompaniesWorked &lt;=1, 1, 0)
+data$LowLevel &lt;- ifelse(data$JobLevel == 1, 1, 0)
+data$NewHire &lt;- ifelse(data$YearsAtCompany &lt;4, 1, 0)
+data$WorkedOver30 &lt;- ifelse(data$TotalWorkingYears &gt;=30, 1, 0)
+data$Uninvolved &lt;- ifelse(data$JobInvolvement &lt;2, 1, 0)
+data$NewToRole &lt;- ifelse(data$YearsInCurrentRole &lt;=1, 1, 0)
+data$Unbalanced &lt;- ifelse(data$WorkLifeBalance &lt;2, 1, 0)
+data$SalaryHike &lt;- ifelse(data$PercentSalaryHike  &gt;20, 1, 0)
+data$HighlySatisfied &lt;- ifelse(data$JobSatisfaction == 4, 1, 0)
+data$LongCommute &lt;- ifelse(data$DistanceFromHome &gt;= 15, 1, 0)
+data$AgeUnder40 &lt;- ifelse(data$Age &lt;40, 1, 0)
+data$DueForPromotion &lt;- ifelse(!data$YearsSinceLastPromotion %in% c(1,5,6,7), 1, 0)
+data$TopPerformer &lt;- ifelse(data$PerformanceRating == 4, 1, 0)
+data$NoStock &lt;- ifelse(data$StockOptionLevel &lt; 1, 1 , 0)
+data$NoTraining &lt;- ifelse(data$TrainingTimesLastYear &lt; 1, 1, 0)
+data$HourlyOver40 &lt;- ifelse(data$HourlyRate &gt; 40, 1, 0)
+data$MonthlyOver15k &lt;- ifelse(data$MonthlyRate &gt; 15000, 1, 0)
+data$LogIncome &lt;- log(data$MonthlyIncome)
+data$SqIncome &lt;- data$MonthlyIncome^2
+data$SqRtIncome &lt;- sqrt(data$MonthlyIncome)
+
+
+# drop factors for regression analysis
+rdata &lt;- subset(data, select = -c(Over18, Department, JobRole, MaritalStatus, EducationField, EmployeeCount, StandardHours))
+
+# scale numerics 0-1 to improve KNN performance
+kdata &lt;- data.frame(apply(rdata, MARGIN = 2, FUN = function(X) (X - min(X))/diff(range(X))))
+
+# set the test/train split
+splitPerc &lt;- .7 </code></pre>
+</div>
+<div id="correlation-analysis" class="section level2">
+<h2>Correlation Analysis</h2>
+<p>Here we are looking to see improvement gained from feature engineering and to ensure we select features which have high correlation with our response variables (i.e. Income/Attrition) for use in our machine learning algorthims.</p>
+<center>
+<div class="figure">
+<img src="figures/corrPlot.png" alt="Correlation Plot of all Rdata features" />
+<p class="caption">Correlation Plot of all Rdata features</p>
+</div>
+</center>
+<pre class="r"><code>data.cor &lt;- cor(rdata)
+cdata &lt;- data.cor[,c(&#39;Attrition&#39;,&#39;MonthlyIncome&#39;)]
+cdata &lt;- data.frame(rbind(names(cdata),cdata))
+cdata &lt;- tibble::rownames_to_column(cdata, &quot;Feature&quot;)
+IncomeCorrelation &lt;- cdata %&gt;% select(Feature, MonthlyIncome) %&gt;% filter(!Feature %in% c(&#39;MonthlyIncome&#39;,&quot;LogIncome&quot;,&quot;SqIncome&quot;,&quot;SqRtIncome&quot;)) %&gt;% arrange(abs(MonthlyIncome))
+
+AttritionCorrelation &lt;- cdata %&gt;% select(Feature, Attrition) %&gt;% arrange(abs(Attrition)) %&gt;% filter(Feature != &#39;Attrition&#39; )
+AttritionCorrelation$Feature &lt;- as.factor(AttritionCorrelation$Feature)</code></pre>
+<pre class="r"><code>IncomeCorrelation %&gt;% top_n(10) %&gt;% mutate(Feature = factor(Feature, Feature)) %&gt;%
+  ggplot(aes(Feature,MonthlyIncome, fill=Feature)) + 
+  geom_col() + labs(title=&quot;Top 10 Monthly Income Drivers&quot;) + coord_flip() + 
+  scale_fill_discrete(guide = guide_legend(reverse=TRUE))</code></pre>
+<p><img src="EmployeeAttrition_files/figure-html/view%20correlation-1.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>AttritionCorrelation  %&gt;% top_n(10) %&gt;% mutate(Feature = factor(Feature, Feature)) %&gt;%
+  ggplot(aes(Feature,Attrition, fill=Feature)) + geom_col() + 
+  labs(title=&quot;Top 10 Attrition Drivers&quot;) + coord_flip() + 
+  scale_fill_discrete(guide = guide_legend(reverse=TRUE))</code></pre>
+<p><img src="EmployeeAttrition_files/figure-html/view%20correlation-2.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code># View correlation for KNN prediction:
+data %&gt;% select(
+  &#39;Attrition&#39;,
+  &quot;JobSatisfaction&quot;,
+  &quot;OverTime&quot;,
+  &quot;WorkLifeBalance&quot;,
+  &quot;JobInvolvement&quot;,
+  &quot;NewHire&quot;,
+  &quot;DueForPromotion&quot;,
+  &quot;NoStock&quot;,
+  &quot;DistanceFromHome&quot;,
+  &quot;MonthlyIncome&quot;
+  ) %&gt;% ggpairs(title = &quot;Correlation for Attrition using KNN Features&quot;)</code></pre>
+<p><img src="EmployeeAttrition_files/figure-html/view%20correlation-3.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code># View correlation plots for salary regression:
+data %&gt;% select(
+   &#39;MonthlyIncome&#39;,
+   &#39;JobLevel&#39;,
+   &#39;TotalWorkingYears&#39;,
+   &#39;JobRole&#39;
+   ) %&gt;% ggpairs(title = &quot;Correlation for Monthly Income using Linear Regression Features&quot;)</code></pre>
+<p><img src="EmployeeAttrition_files/figure-html/view%20correlation-4.png" width="672" style="display: block; margin: auto;" /></p>
+</div>
+<div id="using-k-nearest-neighbors-knn-to-predict-employee-attrition" class="section level2">
+<h2>Using K Nearest Neighbors (KNN) to predict employee attrition</h2>
+<p>First we need to determine the best value of K to use for KNN. We use 50 iterations of tests across all 35 values of K (120% of the square root of the size of the dataset) to find the max useful value of K and the average of its performance statistics.</p>
+<pre class="r"><code>iterations = 50
+set.seed(7)
+numks = round(sqrt(dim(kdata)[1])*1.2)
+masterAcc = matrix(nrow = iterations, ncol = numks)
+masterSpec = matrix(nrow = iterations, ncol = numks)
+masterSen = matrix(nrow = iterations, ncol = numks)
+knnArray &lt;- c(&quot;JobSatisfaction&quot;,
+              &quot;OverTime&quot;,
+              &quot;WorkLifeBalance&quot;,
+              &quot;JobInvolvement&quot;,
+              &quot;NewHire&quot;,
+              &quot;DueForPromotion&quot;,
+              &quot;NoStock&quot;,
+              &quot;DistanceFromHome&quot;,
+              &quot;MonthlyIncome&quot;
+              )
+
+for(j in 1:iterations) {
+  # resample data
+  trainIndices = sample(1:dim(kdata)[1],round(splitPerc * dim(kdata)[1]))
+  train = kdata[trainIndices,]
+  test = kdata[-trainIndices,]
+  for(i in 1:numks) {
+    # predict using i-th value of k
+    classifications = knn(train[,knnArray],test[,knnArray],as.factor(train$Attrition), prob = TRUE, k = i)
+    CM = confusionMatrix(table(as.factor(test$Attrition),classifications, dnn = c(&quot;Prediction&quot;, &quot;Reference&quot;)), positive = &#39;1&#39;)
+    masterAcc[j,i] = CM$overall[1]
+    masterSen[j,i] = CM$byClass[1]
+    masterSpec[j,i] = ifelse(is.na(CM$byClass[2]),0,CM$byClass[2])
+
+  }
+}
+
+MeanAcc &lt;- colMeans(masterAcc)
+MeanSen &lt;- colMeans(masterSen)
+MeanSpec &lt;- colMeans(masterSpec)
+plot(seq(1,numks), MeanAcc, main=&quot;K value determination&quot;, xlab=&quot;Value of K&quot;)</code></pre>
+<p><img src="EmployeeAttrition_files/figure-html/KNN%20attrition-1.png" width="672" /></p>
+<pre class="r"><code>k &lt;- which.max(MeanAcc)
+specs &lt;- c(MeanAcc[k],MeanSen[k],MeanSpec[k])
+names(specs) &lt;- c(&quot;Avg Accuracy&quot;, &quot;Avg Sensitivity&quot;, &quot;Avg Specificity&quot;)
+specs %&gt;% kable(&quot;html&quot;) %&gt;% kable_styling </code></pre>
+<table class="table" style="margin-left: auto; margin-right: auto;">
+<thead>
+<tr>
+<th style="text-align:left;">
+</th>
+<th style="text-align:right;">
+x
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+Avg Accuracy
+</td>
+<td style="text-align:right;">
+0.8565517
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Avg Sensitivity
+</td>
+<td style="text-align:right;">
+0.6782740
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Avg Specificity
+</td>
+<td style="text-align:right;">
+0.8661193
+</td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code>classifications = knn(train[,knnArray],test[,knnArray],as.factor(train$Attrition), prob = TRUE, k = k)
+confusionMatrix(table(test$Attrition,classifications, dnn = c(&quot;Prediction&quot;, &quot;Reference&quot;)), positive = &#39;1&#39;)</code></pre>
+<pre><code>## Confusion Matrix and Statistics
+## 
+##           Reference
+## Prediction   0   1
+##          0 215   6
+##          1  28  12
+##                                           
+##                Accuracy : 0.8697          
+##                  95% CI : (0.8227, 0.9081)
+##     No Information Rate : 0.931           
+##     P-Value [Acc &gt; NIR] : 0.9998644       
+##                                           
+##                   Kappa : 0.3522          
+##                                           
+##  Mcnemar&#39;s Test P-Value : 0.0003164       
+##                                           
+##             Sensitivity : 0.66667         
+##             Specificity : 0.88477         
+##          Pos Pred Value : 0.30000         
+##          Neg Pred Value : 0.97285         
+##              Prevalence : 0.06897         
+##          Detection Rate : 0.04598         
+##    Detection Prevalence : 0.15326         
+##       Balanced Accuracy : 0.77572         
+##                                           
+##        &#39;Positive&#39; Class : 1               
+## </code></pre>
+</div>
+<div id="using-naive-bayes-to-predict-employee-attrition" class="section level2">
+<h2>Using Naive Bayes to predict employee attrition</h2>
+<p>Naive Bayes uses 100 iterations to find an average performance statistics.</p>
+<pre class="r"><code>iterations = 100
+set.seed(7)
+masterAcc = matrix(nrow = iterations)
+masterSpec = matrix(nrow = iterations)
+masterSen = matrix(nrow = iterations)
+
+nbArray &lt;- c(&quot;HighlySatisfied&quot;, 
+             &quot;OverTime&quot;, 
+             &quot;LowLevel&quot;, 
+             &quot;Unbalanced&quot;,
+             &quot;WorkedOver30&quot;,
+             &quot;JobInvolvement&quot;,
+             &quot;SalaryHike&quot;, 
+             &quot;NewHire&quot;, 
+             &quot;NewToRole&quot;,
+             &quot;AgeUnder40&quot;,
+             &quot;DueForPromotion&quot;,
+             &quot;TopPerformer&quot;, 
+             &quot;NoStock&quot;,
+             &quot;MaritalStatus&quot;, 
+             &quot;LogIncome&quot;,
+             &quot;MonthlyOver15k&quot;, 
+             &quot;HourlyOver40&quot;)
+
+nbArray &lt;- knnArray
+
+for(j in 1:iterations)
+{
+  
+  trainIndices = sample(1:dim(data)[1],round(splitPerc * dim(data)[1]))
+  train = data[trainIndices,]
+  test = data[-trainIndices,]
+  model = naiveBayes(train[,nbArray],as.factor(train$Attrition),laplace = .0001)
+  CM = confusionMatrix(table(predict(model,test[,nbArray]),as.factor(test$Attrition), dnn = c(&quot;Prediction&quot;, &quot;Reference&quot;)), positive = &#39;1&#39;)
+  masterAcc[j] = CM$overall[1]
+  masterSen[j] = CM$byClass[1]
+  masterSpec[j] = CM$byClass[2]
+
+}
+specs &lt;- c(colMeans(masterAcc),colMeans(masterSen),colMeans(masterSpec))
+names(specs) &lt;- c(&quot;Avg Accuracy&quot;, &quot;Avg Sensitivity&quot;, &quot;Avg Specificity&quot;)
+specs %&gt;% kable(&quot;html&quot;) %&gt;% kable_styling </code></pre>
+<table class="table" style="margin-left: auto; margin-right: auto;">
+<thead>
+<tr>
+<th style="text-align:left;">
+</th>
+<th style="text-align:right;">
+x
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+Avg Accuracy
+</td>
+<td style="text-align:right;">
+0.8617241
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Avg Sensitivity
+</td>
+<td style="text-align:right;">
+0.4044971
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Avg Specificity
+</td>
+<td style="text-align:right;">
+0.9505032
+</td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code>confusionMatrix(table(predict(model,test[,nbArray]),as.factor(test$Attrition), dnn = c(&quot;Prediction&quot;, &quot;Reference&quot;)), positive = &#39;1&#39;)</code></pre>
+<pre><code>## Confusion Matrix and Statistics
+## 
+##           Reference
+## Prediction   0   1
+##          0 195  28
+##          1  18  20
+##                                         
+##                Accuracy : 0.8238        
+##                  95% CI : (0.772, 0.868)
+##     No Information Rate : 0.8161        
+##     P-Value [Acc &gt; NIR] : 0.4115        
+##                                         
+##                   Kappa : 0.3613        
+##                                         
+##  Mcnemar&#39;s Test P-Value : 0.1845        
+##                                         
+##             Sensitivity : 0.41667       
+##             Specificity : 0.91549       
+##          Pos Pred Value : 0.52632       
+##          Neg Pred Value : 0.87444       
+##              Prevalence : 0.18391       
+##          Detection Rate : 0.07663       
+##    Detection Prevalence : 0.14559       
+##       Balanced Accuracy : 0.66608       
+##                                         
+##        &#39;Positive&#39; Class : 1             
+## </code></pre>
+</div>
+<div id="using-fast-naive-bayes-to-predict-employee-attrition" class="section level2">
+<h2>Using Fast Naive Bayes to predict employee attrition</h2>
+<p>The Fast Naive Bayes method below uses 100 iterations to find average performance statistics using only binary features.</p>
+<pre class="r"><code>iterations = 100
+set.seed(7)
+masterAcc2 = matrix(nrow = iterations)
+masterSpec2 = matrix(nrow = iterations)
+masterSen2 = matrix(nrow = iterations)
+
+nbArray2 &lt;- c(&quot;OverTime&quot;, 
+              &quot;LowLevel&quot;,
+              &quot;HighlySatisfied&quot;,
+              &quot;Unbalanced&quot;,
+              &quot;WorkedOver30&quot;,
+              &quot;SalaryHike&quot;, 
+              &quot;NewHire&quot;,
+              &quot;NewToRole&quot;, 
+              &quot;AgeUnder40&quot;,
+              &quot;DueForPromotion&quot;,
+              &quot;TopPerformer&quot;,
+              &quot;NoStock&quot;,
+              &quot;Gender&quot;,
+              &quot;Uninvolved&quot;, 
+              &quot;Single&quot;,
+              &quot;Divorced&quot;,
+              &quot;Married&quot;,
+              &quot;LongCommute&quot;,
+              &quot;NoTraining&quot;,
+              &quot;HourlyOver40&quot;,
+              &quot;MonthlyOver15k&quot;,
+              &quot;JobManager&quot;,
+              &quot;JobSalesExecutive&quot;, 
+              &quot;JobSalesRepresentative&quot;)
+
+for(j in 1:iterations)
+{
+  
+  trainIndices = sample(1:dim(rdata)[1],round(splitPerc * dim(rdata)[1]))
+  train2 = rdata[trainIndices,]
+  test2 = rdata[-trainIndices,]
+  model2 = fnb.bernoulli(train2[,nbArray2], train2$Attrition, laplace = .0001)
+  CM2 = confusionMatrix(table(predict(model2,test2[,nbArray2]),as.factor(test2$Attrition), dnn = c(&quot;Prediction&quot;, &quot;Reference&quot;)), positive = &#39;1&#39;)
+  masterAcc2[j] = CM2$overall[1]
+  masterSen2[j] = CM2$byClass[1]
+  masterSpec2[j] = CM2$byClass[2]
+}
+specs &lt;- c(colMeans(masterAcc2),colMeans(masterSen2),colMeans(masterSpec2))
+names(specs) &lt;- c(&quot;Avg Accuracy&quot;, &quot;Avg Sensitivity&quot;, &quot;Avg Specificity&quot;)
+specs %&gt;% kable(&quot;html&quot;) %&gt;% kable_styling </code></pre>
+<table class="table" style="margin-left: auto; margin-right: auto;">
+<thead>
+<tr>
+<th style="text-align:left;">
+</th>
+<th style="text-align:right;">
+x
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+Avg Accuracy
+</td>
+<td style="text-align:right;">
+0.8558238
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Avg Sensitivity
+</td>
+<td style="text-align:right;">
+0.4981112
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+Avg Specificity
+</td>
+<td style="text-align:right;">
+0.9254531
+</td>
+</tr>
+</tbody>
+</table>
+<pre class="r"><code>confusionMatrix(table(predict(model2,test2[,nbArray2]),as.factor(test2$Attrition), dnn = c(&quot;Prediction&quot;, &quot;Reference&quot;)), positive = &#39;1&#39;)</code></pre>
+<pre><code>## Confusion Matrix and Statistics
+## 
+##           Reference
+## Prediction   0   1
+##          0 190  24
+##          1  23  24
+##                                           
+##                Accuracy : 0.8199          
+##                  95% CI : (0.7678, 0.8646)
+##     No Information Rate : 0.8161          
+##     P-Value [Acc &gt; NIR] : 0.4749          
+##                                           
+##                   Kappa : 0.3952          
+##                                           
+##  Mcnemar&#39;s Test P-Value : 1.0000          
+##                                           
+##             Sensitivity : 0.50000         
+##             Specificity : 0.89202         
+##          Pos Pred Value : 0.51064         
+##          Neg Pred Value : 0.88785         
+##              Prevalence : 0.18391         
+##          Detection Rate : 0.09195         
+##    Detection Prevalence : 0.18008         
+##       Balanced Accuracy : 0.69601         
+##                                           
+##        &#39;Positive&#39; Class : 1               
+## </code></pre>
+</div>
+<div id="using-logistic-regression-to-predict-employee-attrition" class="section level2">
+<h2>Using Logistic Regression to predict employee attrition</h2>
+<pre class="r"><code>set.seed(7)
+trainIndices = sample(1:dim(data)[1],round(splitPerc * dim(data)[1]))
+train = data[trainIndices,]
+test = data[-trainIndices,]
+model3 &lt;- glm(Attrition ~ JobSatisfaction + 
+                OverTime + 
+                WorkLifeBalance + 
+                JobInvolvement + 
+                NewHire + 
+                NoStock + 
+                BusinessTravel +
+                DistanceFromHome +
+                YearsSinceLastPromotion +
+                EnvironmentSatisfaction
+              , data=train, family=&quot;binomial&quot;)
+
+#HourlyRate+NewToRole +NumCompaniesWorked+LogIncome+JobRole
+summary(model3)</code></pre>
+<pre><code>## 
+## Call:
+## glm(formula = Attrition ~ JobSatisfaction + OverTime + WorkLifeBalance + 
+##     JobInvolvement + NewHire + NoStock + BusinessTravel + DistanceFromHome + 
+##     YearsSinceLastPromotion + EnvironmentSatisfaction, family = &quot;binomial&quot;, 
+##     data = train)
+## 
+## Deviance Residuals: 
+##     Min       1Q   Median       3Q      Max  
+## -1.9646  -0.5692  -0.3528  -0.2028   2.9072  
+## 
+## Coefficients:
+##                         Estimate Std. Error z value Pr(&gt;|z|)    
+## (Intercept)             -0.22404    0.81878  -0.274  0.78437    
+## JobSatisfaction         -0.36064    0.11198  -3.220  0.00128 ** 
+## OverTime                 1.45197    0.25085   5.788 7.12e-09 ***
+## WorkLifeBalance         -0.30413    0.17454  -1.742  0.08143 .  
+## JobInvolvement          -0.70384    0.17417  -4.041 5.32e-05 ***
+## NewHire                  1.09192    0.27736   3.937 8.26e-05 ***
+## NoStock                  1.21630    0.25697   4.733 2.21e-06 ***
+## BusinessTravel           0.54487    0.23629   2.306  0.02112 *  
+## DistanceFromHome         0.02715    0.01469   1.848  0.06457 .  
+## YearsSinceLastPromotion  0.08097    0.03952   2.049  0.04050 *  
+## EnvironmentSatisfaction -0.17431    0.11485  -1.518  0.12910    
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## (Dispersion parameter for binomial family taken to be 1)
+## 
+##     Null deviance: 553.59  on 608  degrees of freedom
+## Residual deviance: 429.64  on 598  degrees of freedom
+## AIC: 451.64
+## 
+## Number of Fisher Scoring iterations: 5</code></pre>
+<pre class="r"><code>atPrd &lt;- predict(model3, type=&quot;response&quot;, newdata = test)
+actualPred &lt;- ifelse(atPrd &gt; 0.5, 1, 0)
+confusionMatrix(table(as.factor(actualPred), as.factor(test$Attrition), dnn = c(&quot;Prediction&quot;, &quot;Reference&quot;)), positive = &#39;1&#39;)</code></pre>
+<pre><code>## Confusion Matrix and Statistics
+## 
+##           Reference
+## Prediction   0   1
+##          0 218  21
+##          1   6  16
+##                                           
+##                Accuracy : 0.8966          
+##                  95% CI : (0.8531, 0.9307)
+##     No Information Rate : 0.8582          
+##     P-Value [Acc &gt; NIR] : 0.041690        
+##                                           
+##                   Kappa : 0.4883          
+##                                           
+##  Mcnemar&#39;s Test P-Value : 0.007054        
+##                                           
+##             Sensitivity : 0.43243         
+##             Specificity : 0.97321         
+##          Pos Pred Value : 0.72727         
+##          Neg Pred Value : 0.91213         
+##              Prevalence : 0.14176         
+##          Detection Rate : 0.06130         
+##    Detection Prevalence : 0.08429         
+##       Balanced Accuracy : 0.70282         
+##                                           
+##        &#39;Positive&#39; Class : 1               
+## </code></pre>
+</div>
+<div id="using-multiple-linear-regression-to-predict-monthly-income" class="section level1">
+<h1>Using Multiple Linear Regression to predict monthly income</h1>
+<p>Multiple linear regression is sensitive to co-linearity of features. Using the correlation matrix above, we determined the simplest model uses only JobLevel, TotalWorkingYears, and JobRole for prediction. The TotalWorkingYears and JobLevel features are both highly significant (p-values &lt;.0001) and have a large impact on the estimated salary regression line.</p>
+<p>The plot below the prediction summary validates the assumptions of linear regression are met. The data appears normally distributed (as seen in the QQ Plot), the features are linearly correlated, there are no extreme outliers with high influence, and standard deviation among the plots is equal less a few outliers. Transformation of the data did not help with the inequality of variance, so caution should be used when making inference on monthly salary, especially n the ~$5,000/month range.</p>
+<pre class="r"><code>set.seed(7)
+  trainIndices = sample(1:dim(rdata)[1],round(splitPerc * dim(rdata)[1]))
+  train = data[trainIndices,]
+  test = data[-trainIndices,]
+salFit &lt;- lm(MonthlyIncome ~ 
+               JobLevel + 
+               TotalWorkingYears +
+               JobRole 
+             ,data=train)
+summary(salFit)</code></pre>
+<pre><code>## 
+## Call:
+## lm(formula = MonthlyIncome ~ JobLevel + TotalWorkingYears + JobRole, 
+##     data = train)
+## 
+## Residuals:
+##     Min      1Q  Median      3Q     Max 
+## -3669.2  -661.0   -34.7   613.6  4106.0 
+## 
+## Coefficients:
+##                               Estimate Std. Error t value Pr(&gt;|t|)    
+## (Intercept)                    -25.671    260.270  -0.099  0.92146    
+## JobLevel                      2762.115     98.253  28.112  &lt; 2e-16 ***
+## TotalWorkingYears               49.968      9.242   5.407 9.29e-08 ***
+## JobRoleHuman Resources        -409.005    297.717  -1.374  0.17002    
+## JobRoleLaboratory Technician  -580.693    217.614  -2.668  0.00783 ** 
+## JobRoleManager                4097.501    277.600  14.760  &lt; 2e-16 ***
+## JobRoleManufacturing Director  116.621    206.533   0.565  0.57252    
+## JobRoleResearch Director      4059.775    264.269  15.362  &lt; 2e-16 ***
+## JobRoleResearch Scientist     -357.981    216.054  -1.657  0.09806 .  
+## JobRoleSales Executive         -50.411    186.455  -0.270  0.78697    
+## JobRoleSales Representative   -494.479    263.957  -1.873  0.06151 .  
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## Residual standard error: 1077 on 598 degrees of freedom
+## Multiple R-squared:  0.9483, Adjusted R-squared:  0.9474 
+## F-statistic:  1096 on 10 and 598 DF,  p-value: &lt; 2.2e-16</code></pre>
+<pre class="r"><code>salPrd &lt;- predict(salFit, interval=&quot;predict&quot;,newdata = test)
+RMSE &lt;- sqrt(mean((salPrd[,1] - test$MonthlyIncome)^2))
+RMSE</code></pre>
+<pre><code>## [1] 1033.745</code></pre>
+<pre class="r"><code>olsrr::ols_plot_diagnostics(salFit)</code></pre>
+<p><img src="EmployeeAttrition_files/figure-html/salary%20regression-1.png" width="672" style="display: block; margin: auto;" /><img src="EmployeeAttrition_files/figure-html/salary%20regression-2.png" width="672" style="display: block; margin: auto;" /><img src="EmployeeAttrition_files/figure-html/salary%20regression-3.png" width="672" style="display: block; margin: auto;" /></p>
+</div>
+
+
+
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.header').parent('thead').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+
+
+</script>
+
+<!-- tabsets -->
+
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+
+$(document).ready(function () {
+  $('.tabset-dropdown > .nav-tabs > li').click(function () {
+    $(this).parent().toggleClass('nav-tabs-open')
+  });
+});
+</script>
+
+<!-- code folding -->
+<script>
+$(document).ready(function () {
+  window.initializeCodeFolding("hide" === "show");
+});
+</script>
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
