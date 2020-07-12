@@ -11,5 +11,7 @@ navbar:
       href: BeerCaseStudy.html
     - text: "Employee Attrition"
       href: EmployeeAttrition.html
+    - text: "Bank Marketing Analysis"
+      href: Bank-Marketing-Analysis.html
     - text: "Beer Shiny App"
       href: https://dustinbracy.shinyapps.io/dustinbracygithub/

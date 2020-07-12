@@ -6,7 +6,6 @@ output:
   html_document:
     code_folding: hide
     theme: 'spacelab'
-
 editor_options: 
   chunk_output_type: console
 ---
@@ -210,7 +209,7 @@ Here we are looking to see improvement gained from feature engineering and to en
 
 <center>
 
-![Correlation Plot of all Rdata features](./figures/CorrPlot.png) 
+![Correlation Plot of all Rdata features](./figures/attrition/CorrPlot.png) 
 
 </center>
 
@@ -252,7 +251,7 @@ p.mat <- cor.mtest(rdata)
 col <- colorRampPalette(c("#BB4444", "#EE9988", "#FFFFFF", "#77AADD", "#4477AA"))
 
 # Build corrNums.png
-png(height=1200, width=1500, pointsize=8, file="./figures/corrNums.png")
+png(height=1200, width=1500, pointsize=8, file="./figures/attrition/corrNums.png")
 corrplot(data.cor, method="color", col=col(200),  
          type="upper", order="hclust", 
          addCoef.col = "black", # Add coefficient of correlation
@@ -266,13 +265,13 @@ ggsave("./figures/corrNums.png", units="in", width=5, height=4, dpi=600)
 dev.off()
 
 # Build corrPlot.png
-png(height=1200, width=1800, pointsize=15, file="./figures/corrPlot.png")
+png(height=1200, width=1800, pointsize=15, file="./figures/attrition/corrPlot.png")
 corrplot(data.cor, method="circle", order="hclust",tl.col="black", type="full", tl.cex = 1, p.mat = p.mat, sig.level = 0.01, insig = "blank")
 ggsave("./figures/corrPlot.png", units="in", width=5, height=4, dpi=600)
 dev.off()
 
 # Build corrMixed.png
-png(height=1200, width=1500, pointsize=10, file="./figures/corrMixed.png")
+png(height=1200, width=1500, pointsize=10, file="./figures/attrition/corrMixed.png")
 corrplot.mixed(round(100*data.cor), number.cex = .75, tl.cex = 1, tl.pos = "lt",tl.col="black", is.corr=F)
 ggsave("./figures/corrMixed.png", units="in", width=5, height=4, dpi=600)
 dev.off()

@@ -1,0 +1,1056 @@
+---
+title: "Bank Marketing Analysis Project"
+author: "D. Bracy , H.H. Nguyen, S.Purvis"
+date: "04/18/2020"
+output:
+  html_document: default
+  word_document: 
+    reference_docx: "wordStyleRef.docx"
+editor_options:
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(car)
+library(MASS)
+library(caret)
+library(corrplot)
+library(GGally)
+library(e1071)
+library(rpart)
+library(rpart.plot)
+library(rattle)
+library(randomForest)
+library(caTools)
+library(descr)
+library(forcats)
+library(Boruta)
+library(gridExtra)
+library(kableExtra)
+library(class)
+library(ROCR)
+library(car)
+library(ResourceSelection)
+library(tidyverse)
+library(ggpubr)
+library(lmtest)
+
+
+# wordStyleRef style changes:
+## Set margins to .5"
+## Heading 2: remove space before
+## Heading 5: centers text (#####) 
+## Date: remove space after
+
+
+source("./R/helpers.R")
+
+```
+
+# I. Introduction
+
+In this project, we will study different approaches to predict the success of bank telemarketing the Bank Marketing data set [1].   
+The retail banking industry provides financial services to families and individuals.  Banks’ main functions are threefold; they issue credit in the forms of loans and credit lines, provide a secure location to deposit money, and allow a mechanism to manage finances in the form of checking and savings accounts.  This analysis will focus specifically on the influential factors from direct marketing campaigns managed by a Portuguese banking institution in an attempt to get secure commitment for term deposits.  Understanding not only which marketing campaigns were most effective, but also the timing of the campaign and the socioeconomic demographics will allow the retail banking industry to further target and tune their approach to securing term deposits.  
+Bank Marketing data from this data set were used to address two project objectives:  
+1. Display the ability to perform EDA and perform a logistic regression analysis and provide interpretation of the regression coefficients including hypothesis testing, and confidence intervals.
+2. With a simple logistic regression model as a baseline, implement additional competing models to improve on prediction performance metrics.  
+
+
+# II. Data Description
+
+The team was provided a substantial marketing dataset.  It was comprised of categorical and continuous variables and a resulting binary result (Y/N).  The data ranges from May 2008 to November 2010.  As described in the table below, we have equal counts of numeric and categorical variables.  There are demographics, data related to the depth and breadth of the marketing campaign, and market indicators included in this set.
+
+|Variable|Type|Description|
+|---|---|---|
+|Age|Numeric|Age of the Individual|
+|Job|Categorical|Type of job held|
+|Marital|Categorical|Marital Status|
+|Education|Categorical|Level of Education of individual|
+|Default|Categorical|Y/N/Unknown on whether the individual has credit in default|
+|Housing|Categorical|Y/N/Unknown on whether the individual has a housing loan|
+|Loan|Categorical|Y/N/Unknown on whether the individual has a personal loan|
+|Contact|Categorical|Contact Communication Type|
+|Month|Categorical|Month of last contact|
+|Day_of_Week|Categorical|Day of the week of last contact – Weekdays Only|
+|Duration|Numeric|Duration of last contact, in seconds.  *should only be used as a benchmark, since it can’t be known beforehand|
+|Campaign|Numeric|Number of contacts performed during this campaign for this client|
+|Pdays|Numeric|Number of days that passed by after a client was contacted from a previous campaign (999 means not contacted previously)|
+|Previous|Numeric|Number of contacts performed before this campaign for this client|
+|Poutcome|Categorical|Outcome of previous marketing campaign|
+|Emp.var.rate|Numeric|Employment variation rate – quarterly indicator|
+|Cons.price.idx|Numeric|Consumer Price Index – monthly indicator|
+|Cons.conf.idx|Numeric|Consumer confidence index – monthly indicator|
+|Euribor3m|Numeric|Euribor (Euro Interbank Offered Rate) 3 month rate – daily indicator|
+|Nr.employed|Numeric|Number of employees – quarterly indicator|
+|Y|Binary|Did Client subscribe to a term deposit|
+
+
+# III. Exploratory Data Analysis (EDA)  
+
+During our preliminary assessment of the data, we first evaluated the impact of missing data. We found that technically we did not have any missing data, but we were provided a fair amount of unknown values.  The original dataset has thousands of observations.  Because we did not feel limited by our dataset size, we decided to exclude any observation that has an unknown record recorded in any of the variables.  This left us over 30,000 complete observations to work with. We also can see that the variable month only has 10 levels (no Jan and Feb).   Next, we evaluated the normality of all continuous variables.  We employed box plots and bar charts to visually inspect distribution.  We observed right skewness in Age, but we can rely on the central limit theorem for normality assumptions in spite of visual indications.
+
+We next investigated correlation.  As shown in the correlation plot below, 
+![](./figures/bank/corrPlot.png){width="4.5in" height="4.5in"} 
+
+```{r EDA_CorrPlot, out.height=500, out.width=500, fig.align="center", fig.cap='Correlation Plot', echo=FALSE}
+
+#knitr::include_graphics('./figures/bank/corrPlot.png')
+
+#knitr::include_graphics('./figures/bank/corrPlot.png')
+
+
+```
+most of the relationships between these predictors have random behavior. Most correlations are close to zero or between the interval (-0.4,0.4). However, there are some common sense correlations, particularly between specific factors in variables.  For example: cons.price.idx vs. emp.var.rate are positively correlated.  This is reasonable as both are market indicators that would naturally tether together. Some very strong and positive correlations can be seen easily such that emp.var.rate vs. euribor3m, emp.var.rate vs. nr.employed and euribor3m vs. nr.employed, involved three colinear predictors – Employment variation rate, Number of employees and Offered rate.   
+
+We excluded duration from the model selection process, because it is an indicator variable that can be utilized as a benchmark, but is not known before the calls are made, so should not be used in prediction. Additionally, we ran a test of variable importance by using Boruta package. The Boruta algorithm is a wrapper built around the random forest classification algorithm. It provided some additional insight into which variables are “important” and in what order. We noted that Marital Status, Loan, Default and Housing are all relatively less important than other variables.  We will revisit this insight as we approach interactions.
+
+![](./figures/bank/variableImportance.png){width="4in" height="4in"} 
+
+Our final iteration of feature engineering was to separate the data into a training and test set for all assessments going forward, consistently using the same split of test/train data for each model. With feature engineering complete, we can consider a dimension reduction method: Principal Component Analysis (PCA).   
+
+### Principal Component Analysis (PCA)
+Principal Component Analysis (PCA) is a tool for unsupervised learning. It is a common approach for deriving a low-dimensional set of features from a large set of variables. PCA creates new uncorrelated variables from a group of variables and the information of these new variables can be used to understand the relationship among the original variables and for other analyses such as regression model and classification that we will mention later.    
+
+First, we perform a PCA on the bank marketing data set after scaling the variables to have standard deviation. Then we plot the first few principal components to visualize the data. The three PCA plots do not show as much separation as we would hope for. We can expect our prediction algorithms to struggle a little bit in providing accurate results, due to the tightly entangled results of our subscription (y) response variable.
+
+![](./figures/bank/PCA.png){width="7.5in"} 
+
+
+# IV. Logistic Regression Analysis  
+
+## Problem Statement  
+Logistic Regression is a popular method for classifying individuals, given the values of a set of explanatory variables. It is a multiple regression algorithm for a dichotomous outcome using a nonlinear function of the explanatory variables for classification. It estimates the probability that an individual is in a particular category. In the next steps, we will build predictive logistic regression models using Feature Selection methods (Forward, Backward, Stepwise). We will discuss how we build models with assumption check, parameter interpretation as well as our conclusion.    
+
+## Building the model  
+By using this Bank Marketing data set [1], we will jump into Multiple Logistic Regression. We will predict a binary response of subscription y (Y/N) by using multiple predictors. Mathematically, the model can be generalized as follows:
+$$log(\frac{p(X)}{1-p(X)})=log(odds)=\beta_0+\beta_1X_1+\beta_2X_2+...+\beta_pX_p$$
+where $X=(X_1,X_2,...,X_p)$ are $p$ predictors. By using the maximum likelihood method, we can estimate $\beta_0,\beta_1,...,\beta_p$. This method has better statistical properties than the least square approach to estimate the unknown linear regression coefficients in linear regression models. Maximum likelihood is a very general approach that is used to fit many of the nonlinear models, especially in our case here with the logistic regression model. In fact, the least squares approach is a special case of maximum likelihood mathematically. However, in this project, we use glm function to fit the model with the argument family=binomial to tell R to run logistic regression and we can also get these estimates without concerning ourselves with the details of the maximum likelihood fitting procedure.  The problem can be rewritten as the following form:
+$$p(X)=\frac{e^{\beta_0+\beta_1X_1+\beta_2X_2+...+\beta_pX_p}}{1+e^{\beta_0+\beta_1X_1+\beta_2X_2+...+\beta_pX_p}}.$$
+
+
+### Feature Selection
+In constructing our logistic regression algorithm, we fit various models by using forward, backward and stepwise on the full model. We reduced the initial model based on the the variables deemed insignificant.  Those variables included: Marital, Education, Default, Loan and Housing.  All showed insignificance in predicting subscriptions.  We also used stepwise method on the simple model and the reduced model without interaction term as follows: 
+
+$$log(odds) =\beta_0+ \beta_1 * job+\beta_2 * contact+\beta_3 * month+\beta_4 * day\_of\_week+\beta_5 * campaign+\beta_6 * pdays+\beta_7 * poutcome+\beta_8 * emp.var.rate+\beta_9 * cons.price.idx+\beta_10 * cons.conf.idx+\beta_11 * nr.employed.$$	
+
+By checking VIFs (explained in Assumption Checking), we arrive the final model (without emp.var.rate):
+
+  $$log(odds) =\beta_0+ \beta_1 * job+\beta_2 * contact+\beta_3 * month+\beta_4 * day\_of\_week+\beta_5 * campaign+\beta_6 * pdays+\beta_7 * poutcome++\beta_8 * cons.price.idx+\beta_9 * cons.conf.idx+\beta_10 * nr.employed.$$   
+
+When assessing fit, we determined that we would include AIC, AUC and look at the specificity/sensitivity.  Our "smaller model" produced an AIC of 14664, and AUC of 0.8067405 and accuracy 0.8764.    
+
+![](./figures/bank/ROClogistic.png){width="4.5in"}  
+
+
+### Model Analysis   
+
+After Feature Selection, the optimal model is best described as:   
+
+$$log(odds) =\beta_0+ \beta_1 * job+\beta_2 * contact+\beta_3 * month+\beta_4 * day\_of\_week+\beta_5 * campaign+\beta_6 * pdays+\beta_7 * poutcome++\beta_8 * cons.price.idx+\beta_9 * cons.conf.idx+\beta_10 * nr.employed.$$   
+
+Next, we will go through analysis steps related to the final model.   
+
+
+#### Assumption Checking   
+
+Logistic regression does not make many of the key assumptions of linear regression and general linear models that are based on ordinary least squares algorithms – particularly regarding linearity, normality, homoscedasticity, and measurement level. First, logistic regression does not require a linear relationship between the dependent and independent variables.  Second, the error terms (residuals) do not need to be normally distributed.  Third, homoscedasticity is not required.  Finally, the dependent variable in logistic regression is not measured on an interval or ratio scale. However, some other assumptions still apply.  
+
+Binary logistic regression requires the dependent variable to be binary and ordinal logistic regression requires the dependent variable to be ordinal. In this model, our response variable is categorical (Y/N) then this assumption is good.  We assume the observations to be independent of each other to perform the analysis. We also check the linearity assumption between independent variables and log odds by using Global Null Hypothesis test (Likelihood Ratio, Score, Wald). Here we use Likelihood Ratio Test, shown below.   
+
+![](./figures/bank/LRT.png){width="5in"} 
+
+We also can perform the Wald test (Anova(simple.model, type="II", test="Wald")) to get the similar result as Likelihood Ratio Test. Another way to get Likelihood Ratio Test result by this code anova(MyGLM, test="LRT"). Although this analysis does not require the dependent and independent variables to be related linearly, it requires that the independent variables are linearly related to the log odds. By  p values < 0.05,  we reject the null hypothesis. It means that at least one explanatory variable in the model is significant.   
+
+
+
+Here, logistic regression typically requires a large sample size then this assumption is satisfied based on the data set [1].  
+
+Logistic regression requires there to be little or no multicollinearity among the independent variables. This means that the independent variables should not be too highly correlated with each other.  By checking the VIF of the reduced model above,
+
+![](./figures/bank/vif_before.png){width="4.5in"} 
+
+the VIF of emp_var_rate and nr_employed are high. Then we decide to remove emp_var_rate and we check again VIFs with the new model.  
+
+![](./figures/bank/vif_after.png){width="4.5in"} 
+
+The new model now looks good. We will choose it as our final model for this objective.  
+
+We evaluated the Cook's D Plot and Leverage plot to assess assumption violations. Cook's D did not return a value above 0.0020, showing that there are no significant outliers to consider.  The Residual Leverage plot also supports this, with only one value above 0.020.    
+
+  ![](./figures/bank/ResidualLeverage.png){width="7.5in"}
+  
+#### Hypothesis Tests   
+
+We can test for a Global Null Hypothesis with a Likelihood Ratio test.
+
+![](./figures/bank/LRT.png){width="5in"}   
+
+We can perform Score or Wald test for Global Null Hypothesis. Alternatively, we can run ANOVA to get more information.  
+
+![](./figures/bank/WaldLRT.png){width="7.5in"}     
+
+Because our p value is less than 0.05,we reject the null hypothesis. It means that at least one explanatory variable in the model is significant in determining the response.   
+
+Before a model is relied upon to draw conclusions or predict future outcomes we should check, as far as possible, that the model we have assumed is correctly specified. That is, that the data do not conflict with assumptions made by the model. For binary outcomes logistic regression is the most popular modelling approach.  We now look at the popular, but sometimes criticized, Hosmer-Lemeshow goodness of fit test for logistic regression. The p value is less than 0.05, affirming our model is calibrated.    
+
+![](./figures/bank/hoslem.png){width="5in"}   
+
+
+The ROC curve calculation shows an AUC of 0.8067405 (see Feature Selection above for plot).     
+
+
+
+
+#### Interpretation    
+
+We use predict() function in R to predict the probability of securing commitment for term deposits (Y/N). The type="response" option for the output form $P(Y=1|X)$ as opposed to other information such as the logit. Below are the first ten probabilities:  
+ 
+![](./figures/bank/probslogisticmodel.png){width="7.5in"} 
+
+We know that these values correspond to the probability of securing commitment for term deposits "yes" rather than "no". We can check it easily by using the contrasts() function, which indicates that R has created a dummy variable with a 1 to indicate "yes".  
+
+Here are the summary statistics for the final model.  
+
+![](./figures/bank/summarylogistic.png){width="4.5in"}   
+
+To access just the coefficients for this model, we use the coef() function.  
+
+
+![](./figures/bank/coeflogistic.png){width="7.5in"}  
+
+
+We can use the confint() function (using profiled log-likelihood) or confint.default() function (using standard errors) to obtain confidence intervals for the coefficient estimates. Note that for logistic models, confidence intervals are based on the profiled log-likelihood function.    
+
+![](./figures/bank/CIsLogistic.png){width="7.5in"}
+
+Recall that we are calculating toward a yes or no outcome.  Each coefficient described adds or detracts from the total.  The y-intercept is set at -58.83 (related to log(odds) (with confidence interval of [50.03, 67.59]).  When looking at the levels of Job, blue collar and services are both significant and detrimental toward the overall value (both at -0.20 with CI [-0.35, -0.07] and [-0.38, 0.03] respectively).  Alternatively, retired and student both significantly impact the outcome positively.  Retired increases the value by 0.29 (CI of [0.11, 0.47]) while students increase by 0.29 (with CI of [0.06, 0.52]).  The method of contact is also of importance, where telephone calls (versus cell phone contact) decreases the overall outcome by -0.54 (with CI of [-0.69, -0.40]).  Specific Months had disparate impact.  The month of May produces the lowest coefficient with -0.65 and confidence interval of (-0.81, -0.49).  March provided the highest coefficient of 0.81 with confidence intervals of (0.56, 1.06).   
+
+To predict the odds of getting secure commitment for term deposits (Y/N), we only put the value of each predictor inside the model and take the exponential to get probability (from 0 to 1).  Notice that with categorical explanatory variables, Yes  is 1 and No is 0.
+
+
+## Logistic Regression Conclusion  
+
+The simple model produced in logistic regression highlights a few key factors among the variables that indicate importance.  As the presumed goal is achieving a Yes result, specific items could be focused on in future solicitation efforts to employ resources efficiently.  Students and Retired persons both tested as factors worth expanding on.  Additionally, cell phone contact would be advised.  Specific months proved significant, but that is likely due to the index numbers more than the actual month itself.  We must point out that this is an observational study, so no true conclusions can be made from this model about the larger population or around causality.  The findings are nonetheless interesting.
+
+# V. Alternative Models  
+
+## Problem Statement  
+With our simple logistic regression model as a baseline, the team performed additional competing models evaluations to improve on prediction performance metrics.    
+
+## Adding Complexity to Logistic Regression
+  When inserting complexity in the model, the team revisited the Boruta analysis of variable importance.  Euribor3M was the most important single variable identified in the assessment.  This variable, as mentioned above, is a lending rate banks use when specifically lending on loans with a 3 month maturity.  We applied this to month as the variable is time based.  Additionally, we included interactions with pdays, age and nr.employed believing we may find that socioeconomic factors and timing would impart significance.  Finally, we included an interaction between pdays and campaign with success.
+  Our final model produced an AIC of 14579, showing that interactions in this case didn't add real value.  Furthermore, they would require a more cumbersome interpretation of the model without clear influence by single variables.  Additionally, it produced a ROC of 0.809, again not performing significantly better than the simple logistic regression model.  
+
+## Looking at Continuous Predictors  
+
+### LDA  
+Linear Discriminant Analysis allows for exploration of continuous variables by blending impacts across all variables in a single model.  When we performed this analysis, we found a misclassification error of .625 but a AUC of 0.929.  The challenge in LDA is that all components are included in each new model, thereby masking significance in single variables.  However, the coefficients in LD1 do still provide insight.   Euribor3m, Cons.Price.Idx, and Emp.Var.Rate appear to significantly overshadow the other included variables.  We found this same significance in the other model assessments.  
+
+
+
+### KNN  
+  In the real world, we cannot always predict qualitative response using the Bayes classifier because computing Bayer classifier is impossible. The reason is that we do not know the conditional distribution of Y given X. One of the ideas is K-nearest neighbors (KNN) classifier. It is a simple, supervised machine learning algorithm that can be used to solve both classification and regression problems. By using the KNN regression method, it has an 88% overall accuracy, with 97% sensitivity when performed outright. However, specificity suffers with only 29.6% accuracy. Scaling the data alone did not improve the performance of KNN. We then fed KNN algorithm the limited set of predictors used in Logistic Regression, which also did not improve performance.  Hyper-tuning the data maintained the overall accuracy of 88%.  It improved specificity at the cost of sensitivity though.  Sensitivity is instead 68.3% whereas specificity is now 89.7%.  
+
+
+# VI. Model Performance Comparisons  
+
+Because of the nature of the dataset, emphasis is placed on correctly predicting a positive outcome (i.e. the customer subscribes to term deposits).  So for comparison purposes in the context of our goals, we're going to focus on the following metrics: Area Under the Curve (AUC), Overall Accuracy, Precision (percentage of predicted positive events out of all positive events), and Recall (Ability to *correctly* predict when an event occurs).  
+
+## Performance Comparison table
+
+|Model|AUC|Overall Accuracy|Precision (Pos Pred Values)|Recall (Sensitivity)|
+|---|---|---|---|---|
+|Logistic Regression (Simple)|.809|.876|.49|.518|
+|Logistic Regression (Interaction)|.809|.877|.521|.519|
+|Linear Discriminate Analysis (LDA)|.805|.884|.406|.564|
+|K-Nearest Neighbors (KNN) continuous|.609|.888|.682|.233|
+|K-Nearest Neighbors (KNN) categorical|.632|.886|.610|.291|
+|Decision Trees|.721|.886|.186|.7|
+|Random Forest|.793|.871|.431|.495|
+
+
+For all models, in order to compare equally, we ran both with the full data, and with the subset used in the simple logistic regression model.  The additional data points did not significantly help any of the models, so for the final comparison we used the subset used in the simple regression model for comparison. 
+
+During modeling of categorical KNN, we utilized a full model, with all variables in it from the simple logistic regression model and performed ten iterations of cross validation.  Using KNN with scaled, continuous predictors and the same variables broken out in a one-hot encoded fashion, we were able to obtain much better precision metrics, but at the expense of recall.  We employed a hyper-tuning approach to find the best value of K, retraining the model on each value of K up to the square root of the number of observations in our model.  It was determined the best value of K was 60, and this is what was used for the tuned KNN model.  
+
+Ultimately, the logistic regression models had the best performance with the highest AUC score, and performing best on overall positive prediction metrics.
+
+
+# VII. Conclusion  
+
+  The business problem we were tasked to solve was how can we best predict subscriptions for term deposits.  The team decided early on that while overall accuracy was certainly important, priority should be given to the model that accurately predicts the yes outcome the best.  With that in mind, we found that 
+  
+  $$log(odds) =\beta_0+ \beta_1 * job+\beta_2 * contact+\beta_3 * month+\beta_4 * day\_of\_week+\beta_5 * campaign+\beta_6 * pdays+\beta_7 * poutcome++\beta_8 * cons.price.idx+\beta_9 * cons.conf.idx+\beta_10 * nr.employed.$$   
+
+would be recommended.  Furthermore, as stated previously, this is an observational study.  We would be remiss in failing to recognize the economic parallels between this data time frame and our current economic climate.  Our next steps would be to identify, if possible, year as well in the dataset.  That would allow us to attempt to tune the model a bit in line with today's economic volatility.  
+
+
+# Acknowledgement  
+
+We would like to express our sincere gratitude to Dr. Jacob Turner (SMU) for excellent course design that we have obtained during the Spring semester 2020 of MSDS SMU.
+
+# References  
+
+[1] *Bank Marketing Data Set*  https://archive.ics.uci.edu/ml/datasets/Bank%20Marketing#  
+[2] Albright, W. L. Winston, *Business Analytics - Data Analysis and Decision Making*, 7th Edition, Cengage, 2019.  
+[3] Anderson et al., *Statistics for Business & Economics*, Cengage, 2020.    
+[4] G. Rodriguez, *Logit Models in R*, https://data.princeton.edu/wws509/r/c3s1, Princeton.   
+[5] James et al., *An Introduction to Statistical Learning with Application in R*, Springer, 2017.    
+[6] T. Hastie et al., *The Elements of Statistical Learning, Data Mining, Inference*, and Prediction, 2nd Edition, Springer, 2017.   
+[7] D. Hosmer, S. Lemeshow, *Applied Logistic Regression*, 2th Edition, John Wiley & Sons, 2000.   
+[8] B. W. Lindgren,  *Statistical Theory*, 3th Edition, MacMillan Publishing, 1976.  
+[9] D. Montgomery, E. A. Peck, G. G. Vining, *Introduction to Linear Regression Analysis*,  5th Edition, John Wiley & Sons, 2012.  
+[10] Ramsey and Schafer, *The Statistical Sleuth, A Course in Methods of Data Analysis*, 3rd Edition, Cengage, 2013.  
+[11] P. Pandey, *A Guide to Machine Learning in R for Beginners: Logistic Regression*, https://medium.com/analytics-vidhya/a-guide-to-machine-learning-in-r-for-beginners-part-5-4c00f2366b90, Medium, 2018.  
+[12] P. Pandey, *Simplifying the ROC and AUC metrics*, https://towardsdatascience.com/understanding-the-roc-and-auc-curves-a05b68550b69, Towards Data Science, 2019.    
+[13] *UCLA - Logit Regression R Data Analysis Examples*, https://stats.idre.ucla.edu/r/dae/logit-regression/  
+[14] J. S. Long, *Regression Models for Categorical and Limited Dependent Variables*, Thousand Oaks, CA: Sage Publications, 1997.  
+ 
+**Dustin Bracy** – Southern Methodist University – Email: dbracy@smu.edu   
+**Huy Hoang Nguyen** – Southern Methodist University – Email: hoangnguyen@smu.edu  
+**Sabrina Purvis** – Southern Methodist University – Email: spurvis@smu.edu   
+
+\newpage
+
+# Code Appendix
+
+## Feature Engineering
+
+```{r Feature Engineering, warning=FALSE}
+
+# read in 'Bank Additional Full' file
+bankfull = read.csv("./data/bank-additional-full.csv",header = TRUE, sep = ";")
+
+# convert "unknown" values to NA and view percentage of missing values
+bankfull[bankfull == "unknown"] <- NA 
+
+plotNAs(bankfull)
+
+# Remove duration from model, as this isn't known until 'y' is known
+bankfull <- bankfull %>% dplyr::select(!duration)
+
+# Drop NAs
+bankfull <- bankfull %>% drop_na()
+bankfull$job <- droplevels(bankfull$job, 'unknown')
+bankfull$loan <- droplevels(bankfull$loan, 'unknown')
+bankfull$default <- droplevels(bankfull$default, 'unknown')
+bankfull$education <- droplevels(bankfull$education, 'unknown')
+bankfull$housing <- droplevels(bankfull$housing, 'unknown')
+bankfull$marital <- droplevels(bankfull$marital, 'unknown')
+
+# Onehot encode categorical variables to binary:
+dmy <- dummyVars(" ~ .", data = bankfull)
+trsf <- data.frame(predict(dmy, newdata = bankfull))
+
+# Remove binary encoded response
+trsf$y <- ifelse(trsf$y.no == 1, 0, 1)
+bankbin <- subset(trsf, select = -c(y.no, y.yes))
+
+# Clean up environment variables:
+rm(dmy, trsf)
+
+# Split the data into training and test set
+set.seed(115)
+trainIndices = sample(1:dim(bankfull)[1],round(.8 * dim(bankfull)[1]))
+
+# Build full test/train
+full.train = bankfull[trainIndices,]
+full.test = bankfull[-trainIndices,]
+
+# Build binary test/train
+bin.train = bankbin[trainIndices,]
+bin.test = bankbin[-trainIndices,]
+
+# Scale binary data 
+scaledbin <- data.frame(scale(bankbin))
+scaledbin$y <- bankbin$y
+
+# Build scaled test/train
+scaled.train = scaledbin[trainIndices,]
+scaled.test = scaledbin[-trainIndices,]
+
+
+
+```
+\newpage
+
+## EDA
+
+```{r EDA, fig.width=7.25, fig.height=8, cache=TRUE, warning=FALSE}
+
+df <- bankfull # input dataframes for plots
+
+#Wide:
+ggarrange(
+  percentagePlot(df, fct_rev(df$job), "Job Type") + coord_flip(),
+  percentagePlot(df, fct_rev(df$education), "Education Level") + coord_flip() ,
+ncol=1, nrow=2)
+
+ggarrange(
+  percentagePlot(df, fct_rev(df$month), "Month") + coord_flip(),
+  percentagePlot(df, fct_rev(df$day_of_week), "Day of the Week") + coord_flip(),
+ncol=1, nrow=2)
+
+ggarrange(
+  mutate(df, prev = as.factor(previous)) %>% ggplot(aes(prev, y, fill=y)) + geom_col(),
+  df %>% ggplot(aes(y, age)) + geom_boxplot() + coord_flip(),
+  df %>% ggplot(aes(month, y,  fill=y)) + geom_col()  ,
+  df %>% ggplot(aes(y, campaign)) + geom_boxplot() + coord_flip() ,
+ncol = 1, nrow=4)
+
+ggarrange(
+  percentagePlot(df, df$previous, "Previous") + coord_flip(),
+  df %>% ggplot(aes(day_of_week, y,  fill=y)) + geom_col()  ,
+ncol = 1, nrow=2)
+
+
+#Square:
+ggarrange(
+  percentagePlot(df, df$marital, "Marital Status"), 
+  percentagePlot(df, df$contact, "Contact Method") ,  
+  percentagePlot(df, df$housing, "Housing"), 
+  percentagePlot(df, df$loan, "Loan"),
+  percentagePlot(df, df$default, "Default"),
+  percentagePlot(df, df$poutcome, "Poutcome"),  
+ncol = 2, nrow=3)
+
+
+ggarrange (
+  df %>% ggplot(aes(campaign, y,  fill=y)) + geom_col() ,
+  df %>% ggplot(aes(previous, y,  fill=y)) + geom_col() ,
+  df %>% ggplot(aes(emp.var.rate, y,  fill=y)) + geom_col() ,
+  df %>% ggplot(aes(y, emp.var.rate)) + geom_boxplot() + coord_flip()   ,  
+  df %>% ggplot(aes(y, cons.price.idx)) + geom_boxplot() + coord_flip() ,
+  df %>% ggplot(aes(cons.conf.idx, y,  fill=y)) + geom_col()  ,
+ncol = 2, nrow = 3)
+
+ggarrange (
+  df %>% ggplot(aes(y, cons.conf.idx)) + geom_boxplot() + coord_flip()  ,
+  df %>% ggplot(aes(euribor3m, y,  fill=y)) + geom_col(),
+  df %>% ggplot(aes(y, euribor3m)) + geom_boxplot() + coord_flip()  ,
+  df %>% ggplot(aes(nr.employed, y,  fill=y)) + geom_col() + coord_flip() ,
+  df %>% ggplot(aes(y, nr.employed)) + geom_boxplot() + coord_flip(),
+  df %>% ggplot(aes(cons.price.idx, y,  fill=y)) + geom_col() + coord_flip() ,
+ncol = 2, nrow = 3)
+
+
+
+
+```
+
+<!-- Caution: Big plots -->
+
+### Correlation Plot 
+##### ![](./figures/bank/bank/corrPlot.png)
+\newpage
+### Scatterplot Matrix  
+##### ![](./figures/bank/Scatterplot Matrix.png)
+\newpage
+### Generalized Pairs Plot  
+##### ![](./figures/bank/pairs.png)
+\newpage
+### Alt Correlation Plot  
+##### ![](./figures/bank/ggcorr.png)
+
+
+```{r EDA Big Plots, eval=FALSE, warning=FALSE}
+
+#additional EDA Graphics
+png(height=800, width=800, pointsize=15, file="./figures/bank/ggcorr.png")
+ggcorr(df)
+dev.off()
+
+# Build Correlation Plot
+buildCorrPlot(bankbin)
+
+# Build Pairs Plot
+png(height=800, width=800, pointsize=15, file="./figures/bank/pairs.png")
+bankfull %>% keep(is.numeric) %>% ggpairs()
+dev.off()
+
+# Identify significant features
+boruta_output <- Boruta(y ~ ., data=bankfull, doTrace=2)
+boruta_signif <- names(boruta_output$finalDecision[boruta_output$finalDecision %in% c("Confirmed", "Tentative")]) 
+print(boruta_signif) 
+
+# Build Variable Importance Plot
+png(height=800, width=800, pointsize=15, file="./figures/bank/variableImportance.png")
+plot(boruta_output, cex.axis=.7, las=2, xlab="", main="Variable Importance")
+dev.off()
+
+
+
+```
+
+## Logistic Regression
+
+```{r logistic_regression, cache=TRUE}
+
+# Build feature list:
+x<-colnames(bankbin)
+x<-x[x != "y"]
+x<-paste(x, collapse='+')
+x # copy this printed value into the model
+rm(x)
+
+# Everything model:
+full.model <- glm(y ~ age+job+marital+education+default+housing+loan+contact+month+day_of_week+campaign+pdays+previous+poutcome+
+    emp.var.rate+cons.price.idx+cons.conf.idx+euribor3m+nr.employed, data = full.train, family = "binomial")
+
+summary(full.model)
+
+# Smaller model:
+simple.model0 <- glm(y~job+contact+month+day_of_week+campaign+pdays+poutcome+emp.var.rate+cons.price.idx+cons.conf.idx+nr.employed, data=full.train, family="binomial")
+
+#test VIF and remove emp.var.rate
+car::vif(simple.model0)
+
+#Final model after removing  emp.var.rate
+simple.model <- glm(y~job+contact+month+day_of_week+campaign+pdays+poutcome+cons.price.idx+cons.conf.idx+nr.employed, data=full.train, family="binomial")
+
+car::vif(simple.model)
+summary(simple.model)
+
+
+lrtest(simple.model) #Likelihood ratio test
+#confidence intervals for simple model
+summary(simple.model$coefficients)
+#CI_lower <- coefficients(simple.model)[2] - 1.96*summary(simple.model)$coefficients[2,2]
+#CI_upper <- coefficients(simple.model)[2] + 1.96*summary(simple.model)$coefficients[2,2]
+
+confint(simple.model)
+
+#cooks D and residual plots for simple.model
+plot(cooks.distance(simple.model))
+plot(simple.model)
+
+pred_lm <-predict(simple.model, type='response', newdata=full.test)
+
+# plot the prediction distribution
+predictions_LR <- data.frame(y = full.test$y, pred = NA)
+predictions_LR$pred <- pred_lm
+
+plot_pred_type_distribution(predictions_LR,0.30)
+
+# choose the best threshold as 0.30
+test.eval.LR = binclass_eval(as.integer(full.test$y)-1, pred_lm > 0.30)
+
+# Making the Confusion Matrix
+test.eval.LR$cm
+
+# calculate accuracy, precision 
+acc_LR=test.eval.LR$accuracy
+prc_LR=test.eval.LR$precision
+recall_LR=test.eval.LR$recall
+fscore_LR=test.eval.LR$fscore
+
+#cat("Accuracy:  ",   acc_LR,
+ #   "Precision: ", prc_LR,
+ #   "Recall:    ", trecall_LR,
+#    "FScore:    ", fscore_LR
+ #   )
+
+
+# calculate ROC
+rocr.pred.lr = prediction(predictions = pred_lm, labels = full.test$y)
+rocr.perf.lr = performance(rocr.pred.lr, measure = "tpr", x.measure = "fpr")
+rocr.auc.lr = as.numeric(performance(rocr.pred.lr, "auc")@y.values)
+
+# print ROC AUC
+rocr.auc.lr
+
+# plot ROC curve for Logistic Regression
+plot(rocr.perf.lr,
+     lwd = 3, colorize = TRUE,
+     print.cutoffs.at = seq(0, 1, by = 0.1),
+     text.adj = c(-0.2, 1.7),
+     main = 'ROC Curve')
+mtext(paste('Logistic Regression - auc : ', round(rocr.auc.lr, 5)))
+abline(0, 1, col = "red", lty = 2)
+
+predictions_LR$predFactor <- ifelse(predictions_LR$pred > .3, 'yes', 'no')
+LogR_simple.CM <- confusionMatrix(table(full.test$y, predictions_LR$predFactor, dnn = c("Truth", "Prediction")), positive = 'yes')
+
+enframe(LogR_simple.CM$byClass)
+LogR_simple.CM$overall
+```
+
+```{r Logistic Regression Feature Selection, eval=FALSE}
+
+# Stepwise Selection commented out to speed up knit process:
+step(full.model,direction="both")
+
+step(simple.model,direction="both")
+
+x<- summary(simple.model)
+y<- confint(simple.model)
+
+cbind(x$coefficients,y)
+
+
+
+
+```
+
+
+```{r Logistic_Interaction, cache=TRUE}
+
+interaction.model <- glm(y~euribor3m+contact+month+cons.price.idx+euribor3m*nr.employed+pdays+campaign+pdays*campaign+job+euribor3m*month+euribor3m*age+euribor3m*pdays, data=full.train, family="binomial")
+summary(interaction.model)
+
+
+#confidence intervals for simple model
+summary(interaction.model$coefficients)
+#CI_lower <- coefficients(interaction.model)[2] - 1.96*summary(interaction.model)$coefficients[2,2]
+#CI_upper <- coefficients(interaction.model)[2] + 1.96*summary(interaction.model)$coefficients[2,2]
+
+confint(interaction.model)
+
+
+#cooks D and residual plots for interaction.model
+### DPB: These plots interfere with chunk execution.  You will need to manually run everything after these interactive plots
+plot(cooks.distance(interaction.model))
+plot(interaction.model)
+### DPB: These plots interfere with chunk execution.  You will need to manually run everything after these interactive plots
+
+
+othermodel<-glm(y~job+marital+education+contact+month+campaign+poutcome+cons.conf.idx, full.train, 
+                family = binomial(link="logit"))
+
+summary(othermodel)
+
+(vif(othermodel)[,3])^2
+
+#previous VIF=5
+hoslem.test(othermodel$y, fitted(othermodel), g=10)
+
+# Sig. lack of fit, but large n
+fit1.pred.train <- predict(othermodel, newdata = full.train) 
+
+#Create ROC curves
+pred <- prediction(fit1.pred.train, full.train$y)
+roc.perf = performance(pred, measure = "tpr", x.measure = "fpr")
+auc.train <- performance(pred, measure = "auc")
+auc.train <- auc.train@y.values
+
+#Plot ROC
+plot(roc.perf)
+abline(a=0, b= 1) #Ref line indicating poor performance
+text(x = .40, y = .6,paste("AUC = ", round(auc.train[[1]],3), sep = ""))
+title(main="Train Set ROC")
+
+#Run model from training set on valid set 
+fit1.pred.test <- predict(interaction.model, newdata = full.test)
+
+#ROC curves
+pred1 <- prediction(fit1.pred.test, full.test$y)
+roc.perf1 = performance(pred1, measure = "tpr", x.measure = "fpr")
+auc.val1 <- performance(pred1, measure = "auc")
+auc.val1 <- auc.val1@y.values
+plot(roc.perf1)
+abline(a=0, b= 1)
+text(x = .40, y = .6,paste("AUC = ", round(auc.val1[[1]],3), sep = ""))
+title(main="Test Set ROC")
+
+
+intPred <- predict(interaction.model, type='response', newdata=full.test)
+
+predictions_LRint <- data.frame(y = full.test$y, pred = NA)
+predictions_LRint$pred <- intPred
+predictions_LRint$predFactor <- ifelse(predictions_LRint$pred > .3, 'yes', 'no')
+
+LogR_interaction.CM <- confusionMatrix(table(full.test$y, predictions_LRint$predFactor, dnn = c("Truth", "Prediction")), positive = 'yes')
+
+
+```
+
+
+## LDA
+
+```{r LDA analysis, cache=TRUE}
+
+LDA.model <- lda(y~., data=scaled.train)
+
+# View weights of each variable:
+LDA.coef<-data.table::setDT(data.frame(LDA.model$scaling), keep.rownames = "Coef")
+LDA.coef %>% arrange(desc(abs(LD1))) %>% format(scientific=F)
+
+
+LDA.preds<-predict(LDA.model, newdata=scaled.test)
+
+LDA.confusionMatrix<-table(LDA.preds$class,scaled.test$y) # Creating a confusion matrix using class (categorical level)
+LDA.confusionMatrix
+
+#Missclassification Error
+ME<-(LDA.confusionMatrix[2,1]+LDA.confusionMatrix[1,2])/1000
+ME
+
+### CONSTRUCTING ROC AUC PLOT:
+# Get the posteriors as a dataframe.
+
+LDA.post <- as.data.frame(LDA.preds$posterior)
+# Evaluate the model
+
+pred <- prediction(LDA.post[,2], scaled.test$y)
+roc.perf = performance(pred, measure = "tpr", x.measure = "fpr")
+auc.train <- performance(pred, measure = "auc")
+auc.train <- auc.train@y.values
+# Plot
+plot(roc.perf)
+abline(a=0, b= 1)
+text(x = .25, y = .65 ,paste("AUC = ", round(auc.train[[1]],3), sep = ""))
+
+LDA.CM <- confusionMatrix(table(scaled.test$y, LDA.preds$class, dnn = c("Truth", "Prediction")), positive = '1')
+
+
+```
+
+
+## PCA
+
+```{r PCA Analysis, cache=TRUE}
+
+PCA.result<-prcomp(bankbin[,-64],scale.=TRUE)
+PCA.scores<-PCA.result$x
+
+# Add the response column to the PC's data frame
+PCA.scores<-data.frame(PCA.scores)
+PCA.scores$y<-bankbin$y
+
+# Loadings for interpretation
+#PCA.result$rotation
+
+# Scree plot
+PCA.eigen<-(PCA.result$sdev)^2
+PCA.prop<-PCA.eigen/sum(PCA.eigen)
+PCA.cumprop<-cumsum(PCA.prop)
+plot(1:57,PCA.prop,type="l",main="Scree Plot",ylim=c(0,1),xlab="PC #",ylab="Proportion of Variation")
+lines(1:57,PCA.cumprop,lty=3)
+
+```
+
+
+```{r PCA Plots, eval=FALSE}
+# Store PCA Plots in a list
+PCA.plots <- list(
+
+ggplot(data = PCA.scores, aes(x = PC1, y = PC2)) +
+  geom_point(aes(col=y), size=1)+
+  ggtitle("PCA of Subscriptions"),
+
+ggplot(data = PCA.scores, aes(x = PC2, y = PC3)) +
+  geom_point(aes(col=y), size=1)+
+  ggtitle("PCA of Subscriptions"),
+
+ggplot(data = PCA.scores, aes(x = PC3, y = PC4)) +
+  geom_point(aes(col=y), size=1)+
+  ggtitle("PCA of Subscriptions")
+)
+
+# Display first three PCA Plots
+png('./figures/bank/PCA.png', width = 1100, height = 250)
+grid.arrange(PCA.plots[[1]], PCA.plots[[2]], PCA.plots[[3]],  ncol=3, nrow=1)
+dev.off()
+
+```
+
+
+## KNN
+
+KNN Has an 88% overall accuracy, with 97% sensitivity.  However, specificity suffers with only 29.6% accuracy. Scaling the data alone did not improve the performance of KNN.  We then fed KNN algorithm the limited set of predictors used in Logistic Regression, which also did not improve performance. 
+
+```{r KNN, cache=TRUE}
+
+# Implementing KNN
+###########################################
+
+# Model the same sample we fed to logistic regression (KNN is sensitive to noise)
+
+KNN.model <- train(y~job+contact+month+day_of_week+campaign+pdays+poutcome+emp.var.rate+cons.price.idx+cons.conf.idx+nr.employed, 
+                   data = full.train, method = "knn", 
+                   maximize = TRUE,
+                   trControl = trainControl(method = "cv", number = 10),
+                   preProcess=c("center", "scale")
+                   )
+
+KNN.preds.full <- predict(KNN.model , newdata = full.test)
+KNN.CM.full <- confusionMatrix(KNN.preds.full , full.test$y, positive = 'yes')
+
+### Cross table validation for KNN
+CrossTable(full.test$y, KNN.preds.full,
+           prop.chisq = FALSE, prop.c = FALSE, prop.r = FALSE,
+           dnn = c('actual default', 'predicted default'))
+
+
+
+### CONSTRUCTING ROC AUC PLOT:
+pred <- prediction(data.frame(as.integer(KNN.preds.full)), full.test$y)
+roc.perf = performance(pred, measure = "tpr", x.measure = "fpr")
+auc.train <- performance(pred, measure = "auc")
+auc.train <- auc.train@y.values
+# Plot
+plot(roc.perf)
+abline(a=0, b= 1)
+text(x = .25, y = .65 ,paste("AUC = ", round(auc.train[[1]],3), sep = ""))
+
+
+```
+
+
+```{r alternative KNN, cache=TRUE}
+knnArray <- c(
+  "job.admin.",
+  "job.blue.collar",
+  "job.entrepreneur",
+  "job.housemaid",
+  "job.management",
+  "job.retired",
+  "job.self.employed",
+  "job.services",
+  "job.student",
+  "job.technician",
+  "job.unemployed",
+  "contact.cellular",
+  "contact.telephone",
+  "month.apr",
+  "month.aug",
+  "month.dec",
+  "month.jul",
+  "month.jun",
+  "month.mar",
+  "month.may",
+  "month.nov",
+  "month.oct",
+  "month.sep",
+  "day_of_week.fri",
+  "day_of_week.mon",
+  "day_of_week.thu",
+  "day_of_week.tue",
+  "day_of_week.wed",
+  "campaign",
+  "pdays",
+  "poutcome.failure",
+  "poutcome.nonexistent",
+  "poutcome.success",
+  "emp.var.rate",
+  "cons.price.idx",
+  "cons.conf.idx",
+  "nr.employed"
+)
+# Hypertuning identified 60 as the best K
+KNN.preds.tuned = knn(scaled.train[,knnArray],scaled.test[,knnArray],as.factor(scaled.train$y), prob = TRUE, k = 60)
+KNN.CM.tuned <- confusionMatrix(table(KNN.preds.tuned, scaled.test$y, dnn = c("Truth", "Prediction")), positive = '1')
+
+### CONSTRUCTING ROC AUC PLOT:
+pred <- prediction(data.frame(as.integer(KNN.preds.tuned)), scaled.test$y)
+roc.perf = performance(pred, measure = "tpr", x.measure = "fpr")
+auc.train <- performance(pred, measure = "auc")
+auc.train <- auc.train@y.values
+# Plot
+plot(roc.perf)
+abline(a=0, b= 1)
+text(x = .25, y = .65 ,paste("AUC = ", round(auc.train[[1]],3), sep = ""))
+
+```
+
+
+```{r KNN Hypertuning, eval=FALSE}
+iterations = 1
+set.seed(115)
+numks = round(sqrt(dim(scaledbin)[1])*1.2)
+masterAcc = matrix(nrow = iterations, ncol = numks)
+masterSpec = matrix(nrow = iterations, ncol = numks)
+masterSen = matrix(nrow = iterations, ncol = numks)
+knnArray <- c(
+  "job.admin.",
+  "job.blue.collar",
+  "job.entrepreneur",
+  "job.housemaid",
+  "job.management",
+  "job.retired",
+  "job.self.employed",
+  "job.services",
+  "job.student",
+  "job.technician",
+  "job.unemployed",
+  "contact.cellular",
+  "contact.telephone",
+  "month.apr",
+  "month.aug",
+  "month.dec",
+  "month.jul",
+  "month.jun",
+  "month.mar",
+  "month.may",
+  "month.nov",
+  "month.oct",
+  "month.sep",
+  "day_of_week.fri",
+  "day_of_week.mon",
+  "day_of_week.thu",
+  "day_of_week.tue",
+  "day_of_week.wed",
+  "campaign",
+  "pdays",
+  "poutcome.failure",
+  "poutcome.nonexistent",
+  "poutcome.success",
+  "emp.var.rate",
+  "cons.price.idx",
+  "cons.conf.idx",
+  "nr.employed"
+)
+
+for(j in 1:iterations) {
+  # resample data
+  KNN.trainIndices = sample(1:dim(scaledbin)[1],round(.8 * dim(scaledbin)[1]))
+  KNN.train = scaledbin[trainIndices,]
+  KNN.test = scaledbin[-trainIndices,]
+  for(i in 1:numks) {
+    # predict using i-th value of k
+    KNN.preds.tuned = knn(KNN.train[,knnArray],KNN.test[,knnArray],as.factor(KNN.train$y), prob = TRUE, k = i)
+    CM = confusionMatrix(table(as.factor(KNN.test$y),KNN.preds.tuned, dnn = c("Truth", "Prediction")), positive = '1')
+    masterAcc[j,i] = CM$overall[1]
+    masterSen[j,i] = CM$byClass[1]
+    masterSpec[j,i] = ifelse(is.na(CM$byClass[2]),0,CM$byClass[2])
+    print(i)
+  }
+}
+
+MeanAcc <- colMeans(masterAcc)
+MeanSen <- colMeans(masterSen)
+MeanSpec <- colMeans(masterSpec)
+png('./figures/bank/bestK.png')
+plot(seq(1,numks), MeanAcc, main="K value determination", xlab="Value of K")
+dev.off()
+k <- which.max(MeanAcc)
+specs <- c(MeanAcc[k],MeanSen[k],MeanSpec[k])
+names(specs) <- c("Avg Accuracy", "Avg Sensitivity", "Avg Specificity")
+specs %>% kable("html") %>% kable_styling
+
+KNN.preds.tuned = knn(scaled.train[,knnArray],scaled.test[,knnArray],as.factor(scaled.trai$y), prob = TRUE, k = k)
+confusionMatrix(table(scaled.test$y,KNN.preds.tuned, dnn = c("Truth", "Prediction")), positive = '1')
+
+```
+
+
+## Recursive Partitioning (Decision Trees)
+
+
+```{r Decision Tree, cache=TRUE}
+# fit the decision tree classification #p1,2,3 is in logistic
+classifier = rpart(formula = y~job+contact+month+day_of_week+campaign+pdays+poutcome+emp.var.rate+cons.price.idx+cons.conf.idx+nr.employed,
+                   data = full.train, method = "class")
+
+# plot
+prp(classifier, type = 2, extra = 104, fallen.leaves = TRUE, main="Decision Tree")
+
+
+# predict test data by probability
+pred.DT = predict(classifier, newdata = full.test, type = 'prob')
+
+# find the threshold for prediction optimization
+predictions_DT <- data.frame(y = full.test$y, pred = NA)
+predictions_DT$pred <- pred.DT[,2]
+plot_pred_type_distribution(predictions_DT,0.36)
+
+# choose the best threshold as 0.36
+test.eval.DT = binclass_eval(as.integer(full.test$y)-1, pred.DT[,2] > 0.36)
+
+# Making the Confusion Matrix
+test.eval.DT$cm
+
+# print evaluation
+cat("Accuracy:  ",   test.eval.DT$accuracy,
+    "\nPrecision: ", test.eval.DT$precision,
+    "\nRecall:    ", test.eval.DT$recall,
+    "\nFScore:    ", test.eval.DT$fscore
+    )
+
+# calculate ROC curve
+rocr.pred = prediction(predictions = pred.DT[,2], labels = full.test$y)
+rocr.perf = performance(rocr.pred, measure = "tpr", x.measure = "fpr")
+rocr.auc = as.numeric(performance(rocr.pred, "auc")@y.values)
+
+# print ROC AUC
+rocr.auc
+
+
+# plot ROC curve
+
+plot(rocr.perf,
+     lwd = 3, colorize = TRUE,
+     print.cutoffs.at = seq(0, 1, by = 0.1),
+     text.adj = c(-0.2, 1.7),
+     main = 'ROC Curve')
+mtext(paste('Decision Tree - auc : ', round(rocr.auc, 5)))
+abline(0, 1, col = "red", lty = 2)
+
+
+#predict
+cart_pred <- predict( classifier , full.test , type = "class")
+cart_prob <- predict( classifier , full.test , type = "prob")
+
+# Confusion matrix
+DecisionTree.CM <- confusionMatrix(table(full.test$y, cart_pred, dnn = c("Truth", "Prediction")), positive = 'yes')
+
+#predictions_DT$predFactor <- ifelse(predictions_DT$pred > .36, 'yes', 'no')
+#DecisionTree.CM <- confusionMatrix(table(full.test$y, predictions_DT$predFactor, dnn = c("Truth", "Prediction")), positive = 'yes')
+
+```
+
+
+```{r Random Forest, cache=TRUE}
+#Random forrest
+#Here we will do a truly RF run by selecting mtry. mtry controls how many
+#predictors are sampled for each bootstrap sample.
+rf<-randomForest(y~.,data=full.train,mtry=9,importance=T,ntree=1000)
+#Go get the ROC
+rf.pred<-predict(rf,newdata=full.test,type="prob")
+pred <- prediction(rf.pred[,2], full.test$y)
+
+roc.perf = performance(pred, measure = "tpr", x.measure = "fpr")
+#Note in the following code the term "train" means nothing here. 
+#I'm just rinsing and repeating code the produces the curve.
+auc.train <- performance(pred, measure = "auc")
+auc.train <- auc.train@y.values
+plot(roc.perf,main="AUC of Test set Random Forest ")
+abline(a=0, b= 1)
+text(x = .40, y = .6,paste("AUC = ", round(auc.train[[1]],4), sep = ""))
+#Making predictions on test and then observing accuracy rates
+fit.pred<-predict(rf,newdata=full.test,type="response",cutoff=c(0.58,0.42))
+confusionMatrix(fit.pred,full.test$y) #Default prediction uses .5 as cut off you can change it specifying "cutoff" option
+randomForest.CM <- confusionMatrix(table(full.test$y, fit.pred, dnn = c("Truth", "Prediction")), positive = 'yes')
+
+
+#Which variables are important.  We can use variable importance.
+varImpPlot (rf,type=1,main="Variable Importance")
+varImpPlot (rf,type=2,main="Variable Importance")
+```
+
+
+
+```{r model comparison, cache=TRUE}
+
+# Name Confusion Matrix object
+#KNN.stats <- confusionMatrix(table(scaled.test$y,classifications, dnn = c("Prediction", "Reference")), positive = '1')
+
+# Create tibble from first metric:
+ModelComparison <- enframe((append(KNN.CM.full$overall[1], KNN.CM.full$byClass)), name = "Metric", value = 'KNN_Full')
+
+# Add Additional Models:
+ModelComparison$KNN_Tuned <- append(KNN.CM.tuned$overall[1], KNN.CM.tuned$byClass)
+ModelComparison$LDA <- append(LDA.CM$overall[1], LDA.CM$byClass)
+ModelComparison$Logistic_Simple <- append(LogR_simple.CM$overall[1], LogR_simple.CM$byClass)
+ModelComparison$Logistic_Interaction <- append(LogR_interaction.CM$overall[1], LogR_interaction.CM$byClass)
+#ModelComparison$Recursive_Partition <- append(rPart.CM$overall[1], rPart.CM$byClass)
+ModelComparison$Decision_Tree <- append(DecisionTree.CM$overall[1], DecisionTree.CM$byClass)
+ModelComparison$RandomForest <- append(randomForest.CM$overall[1], randomForest.CM$byClass)
+
+ModelComparison
+
+
+
+```
+

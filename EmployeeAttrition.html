@@ -1,11 +1,10 @@
 <!DOCTYPE html>
 
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html>
 
 <head>
 
 <meta charset="utf-8" />
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta name="generator" content="pandoc" />
 <meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
 
@@ -236,6 +235,7 @@ $(document).ready(function () {
   border: none;
   display: inline-block;
   border-radius: 4px;
+  background-color: transparent;
 }
 
 .tabset-dropdown > .nav-tabs.nav-tabs-open > li {
@@ -289,6 +289,9 @@ $(document).ready(function () {
 </li>
 <li>
   <a href="EmployeeAttrition.html">Employee Attrition</a>
+</li>
+<li>
+  <a href="Bank-Marketing-Analysis.html">Bank Marketing Analysis</a>
 </li>
 <li>
   <a href="https://dustinbracy.shinyapps.io/dustinbracygithub/">Beer Shiny App</a>
@@ -496,7 +499,7 @@ splitPerc &lt;- .7 </code></pre>
 <p>Here we are looking to see improvement gained from feature engineering and to ensure we select features which have high correlation with our response variables (i.e. Income/Attrition) for use in our machine learning algorthims.</p>
 <center>
 <div class="figure">
-<img src="figures/corrPlot.png" alt="Correlation Plot of all Rdata features" />
+<img src="figures/attrition/corrPlot.png" alt="Correlation Plot of all Rdata features" />
 <p class="caption">Correlation Plot of all Rdata features</p>
 </div>
 </center>
