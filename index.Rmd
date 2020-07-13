@@ -12,7 +12,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 ##### My name is Dustin Bracy and this is a site collection I built using R Markdown to challenge myself and showcase some of my work. Please feel free to look around: get a feel for my CV in 'About Me' or check out some of my portfolio items in the other tabs.
 
-![\^ This is me sans beard. (Man, I clean up nice! :)](./img/Dustin Bracy.jpg){#id .class width=25% height=25%}
+![](./img/Dustin Bracy.jpg){#id .class width=25% height=25%}
 
 ### Connect with me:
 * [GitHub](https://github.com/DustinBracy)  

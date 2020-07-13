@@ -24,7 +24,7 @@ navbar:
       - text: "Data Exploration"
         href: https://nbviewer.jupyter.org/github/DustinBracy/ML7331/blob/master/labs_final/msds_7331_lab.ipynb
       - text: "SVM and Logistic Regression"
-        href: https://nbviewer.jupyter.org/github/DustinBracy/ML7331/blob/master/labs_final/msds_7331_mini_lab_final.ipynb
+        href: https://nbviewer.jupyter.org/github/DustinBracy/ML7331/blob/master/labs_final/msds_7331_mini_lab_resub_final.ipynb
       - text: "MLR, KNN, Random Forest"
         href: https://nbviewer.jupyter.org/github/DustinBracy/ML7331/blob/master/msds_7331_lab_2_final.ipynb
       - text: "Clustering Techniques (coming soon)"
