@@ -31,5 +31,5 @@ navbar:
         #href: page_a.html        
     - text: "Authored Papers"
       menu_Papers:
-      - text: "Experimenting with AWS SageMaker (coming soon)"
-        #href: page_a.html
+      - text: "Experimenting with AWS SageMaker"
+        href: Sagemaker_Experiment.pdf
