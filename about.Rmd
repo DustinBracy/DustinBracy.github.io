@@ -13,7 +13,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ---
 
 ### My Story
-I currently work at Gilsbar as a Senior Business Analyst and Team Leader of IT's Project Management Office.  I live in Madisonville, LA with my wife and two children.  I am from Iowa originally, where I grew up in the country and went to school at a very small school (~200 total in my high school).  I spent 7 years on active duty in the Marine Corps, and another 3 in the reserve.  I love videogames, coding, learning and working with data.  I am a car and motorcycle enthusiast, DIY weekend warrior, tinkerer and most recently: an aspring data scientist.  
+I currently work at Gilsbar as an IT Supervisor over our Business Support teams.  Previously, at Gilsbar, I served for a couple years as a Senior Business Analyst and Team Leader of IT's Project Management Office.  I live in Madisonville, LA with my wife and two children.  I am from Iowa originally, where I grew up in the country and went to school at a very small school (~200 total in my high school).  I spent 7 years on active duty in the Marine Corps, and another 3 in the reserve.  I love learning, coding, reading and working with data.  I am a car and motorcycle enthusiast, DIY weekend warrior, tinkerer and most recently: an aspring data scientist.  
 
 ---
 
@@ -36,8 +36,11 @@ I currently work at Gilsbar as a Senior Business Analyst and Team Leader of IT's
   + Solid understanding of statistics
 
 * **Industry Know-how:**
-  + Machine Learning, AI, predictive modeling
-  + Data visualization skills
+  + Machine Learning, AI, predictive modeling techniques
+  + Regression and Time Series techniques for forecasting 
+  + Classification with Logistic Regression, SVM, RandomForest, Decision Trees, Support Vector Machines and more
+  + Data visualization and storytelling
+  + Detailed knowledge of various cloud stacks (AWS, GCP and Azure)
   + Relational database design
   + Data mining and ETL techniques
   + Process improvement methodologies
@@ -45,10 +48,8 @@ I currently work at Gilsbar as a Senior Business Analyst and Team Leader of IT's
   
 * **Coding Wizardry:**
   + Highly proficient in SQL
-  + Very comfortable in R
-  + Capable in SAS
-  + Capable in Python
-  + Comfortable with Javascript
+  + Very comfortable in R, Python
+  + Capable in JavaScript and SAS
   + Dabble in C# and Java
 
 [^1]: My full work history and experience may be found on [LinkedIn](https://www.linkedin.com/in/dustin-bracy/) 

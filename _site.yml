@@ -7,11 +7,29 @@ navbar:
       href: index.html
     - text: "About Me"
       href: about.html
-    - text: "Beer Case Study"
-      href: BeerCaseStudy.html
-    - text: "Employee Attrition"
-      href: EmployeeAttrition.html
-    - text: "Bank Marketing Analysis"
-      href: Bank-Marketing-Analysis.html
-    - text: "Beer Shiny App"
-      href: https://dustinbracy.shinyapps.io/dustinbracygithub/
+    - text: "Statistical Analysis in R"
+      menu_R:
+      - text: "Beer Case Study"
+        href: BeerCaseStudy.html
+      - text: "Beer Case Study Shiny App"
+        href: https://dustinbracy.shinyapps.io/dustinbracygithub/
+      - text: "Employee Attrition"
+        href: EmployeeAttrition.html
+      - text: "Bank Marketing Analysis"
+        href: Bank-Marketing-Analysis.html
+
+    - text: "Machine Learning in Python"
+      menu_Python:
+      - text: "Deep Dives using Medicare Claim Data:"
+      - text: "Data Exploration"
+        href: https://nbviewer.jupyter.org/github/DustinBracy/ML7331/blob/master/labs_final/msds_7331_lab.ipynb
+      - text: "SVM and Logistic Regression"
+        href: https://nbviewer.jupyter.org/github/DustinBracy/ML7331/blob/master/labs_final/msds_7331_mini_lab_final.ipynb
+      - text: "MLR, KNN, Random Forest"
+        href: https://nbviewer.jupyter.org/github/DustinBracy/ML7331/blob/master/msds_7331_lab_2_final.ipynb
+      - text: "Clustering Techniques (coming soon)"
+        #href: page_a.html        
+    - text: "Authored Papers"
+      menu_Papers:
+      - text: "Experimenting with AWS SageMaker (coming soon)"
+        #href: page_a.html
