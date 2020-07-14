@@ -698,7 +698,7 @@ Bank Marketing data from this data set were used to address two project objectiv
 <div id="feature-engineering" class="section level2">
 <h2>Feature Engineering</h2>
 <pre class="r"><code># read in &#39;Bank Additional Full&#39; file
-bankfull = read.csv(&quot;./data/bank-additional-full.csv&quot;,header = TRUE, sep = &quot;;&quot;)
+bankfull = read.csv(&quot;./data/bank-additional-full.csv&quot;,header = TRUE, sep = &quot;;&quot;, stringsAsFactors = TRUE)
 
 # convert &quot;unknown&quot; values to NA and view percentage of missing values
 bankfull[bankfull == &quot;unknown&quot;] &lt;- NA 
@@ -815,7 +815,7 @@ ncol = 2, nrow = 3)</code></pre>
 <div id="scatterplot-matrix" class="section level3">
 <h3>Scatterplot Matrix</h3>
 <div id="section-1" class="section level5">
-<h5><img src="figures/bank/Scatterplot%20Matrix.png" /></h5>
+<h5><img src="./figures/bank/Scatterplot%20Matrix.png" /></h5>
 <div style="page-break-after: always;"></div>
 </div>
 </div>

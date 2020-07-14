@@ -851,17 +851,17 @@ beer %&gt;% filter(state %in% c(&#39;AZ&#39;))</code></pre>
 <pre><code>## # A tibble: 23 x 10
 ##    Beer        Beer_ID   ABV   IBU Brew_ID Style    OZ    Brewery    City  state
 ##    &lt;chr&gt;         &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;   &lt;dbl&gt; &lt;chr&gt;    &lt;fct&gt; &lt;chr&gt;      &lt;chr&gt; &lt;chr&gt;
-##  1 Barrio Bla~    2005 0.06     60     252 America~ 12    Barrio Br~ Tucs~ AZ   
-##  2 Noche Dulce    2062 0.071    16     232 America~ 16    Borderlan~ Tucs~ AZ   
-##  3 Sunbru Köl~    2309 0.052    17     161 Kölsch   12    Four Peak~ Tempe AZ   
-##  4 Four Peaks~    1585 0.042     9     161 Fruit /~ 12    Four Peak~ Tempe AZ   
-##  5 Hop Knot I~     358 0.067    47     161 America~ 12    Four Peak~ Tempe AZ   
-##  6 Kilt Lifte~     179 0.06     21     161 Scottis~ 12    Four Peak~ Tempe AZ   
-##  7 Lumberyard~    1153 0.053    20     159 America~ 12    Lumberyar~ Flag~ AZ   
-##  8 Camelback      2312 0.061    60     158 America~ 12    Phoenix A~ Phoe~ AZ   
-##  9 Sex Panther    2599 0.069    20      31 America~ 12    SanTan Br~ Chan~ AZ   
-## 10 Winter War~    2073 0.095    25      31 Winter ~ 16    SanTan Br~ Chan~ AZ   
-## # ... with 13 more rows</code></pre>
+##  1 Barrio Bla…    2005 0.06     60     252 America… 12    Barrio Br… Tucs… AZ   
+##  2 Noche Dulce    2062 0.071    16     232 America… 16    Borderlan… Tucs… AZ   
+##  3 Sunbru Köl…    2309 0.052    17     161 Kölsch   12    Four Peak… Tempe AZ   
+##  4 Four Peaks…    1585 0.042     9     161 Fruit /… 12    Four Peak… Tempe AZ   
+##  5 Hop Knot I…     358 0.067    47     161 America… 12    Four Peak… Tempe AZ   
+##  6 Kilt Lifte…     179 0.06     21     161 Scottis… 12    Four Peak… Tempe AZ   
+##  7 Lumberyard…    1153 0.053    20     159 America… 12    Lumberyar… Flag… AZ   
+##  8 Camelback      2312 0.061    60     158 America… 12    Phoenix A… Phoe… AZ   
+##  9 Sex Panther    2599 0.069    20      31 America… 12    SanTan Br… Chan… AZ   
+## 10 Winter War…    2073 0.095    25      31 Winter … 16    SanTan Br… Chan… AZ   
+## # … with 13 more rows</code></pre>
 </div>
 <div id="b.-check-the-first-and-last-6-observations-to-verify-the-merged-file." class="section level3">
 <h3>2b. Check the first and last 6 observations to verify the merged file.</h3>
@@ -1443,11 +1443,11 @@ Brewdata %&gt;% filter(is.na(Style))</code></pre>
 <pre><code>## # A tibble: 5 x 10
 ##   Beer        Beer_ID    ABV   IBU Brew_ID Style OZ    Brewery      City   state
 ##   &lt;chr&gt;         &lt;dbl&gt;  &lt;dbl&gt; &lt;dbl&gt;   &lt;dbl&gt; &lt;chr&gt; &lt;fct&gt; &lt;chr&gt;        &lt;chr&gt;  &lt;chr&gt;
-## 1 Special Re~    2210 NA        NA      30 &lt;NA&gt;  16    Cedar Creek~ Seven~ TX   
-## 2 Kilt Lifte~    1635  0.06     21     161 &lt;NA&gt;  12    Four Peaks ~ Tempe  AZ   
-## 3 OktoberFie~    2527  0.053    27      67 &lt;NA&gt;  12    Freetail Br~ San A~ TX   
-## 4 The CROWLE~    1796 NA        NA     167 &lt;NA&gt;  32    Oskar Blues~ Longm~ CO   
-## 5 CAN&#39;D AID ~    1790 NA        NA     167 &lt;NA&gt;  12    Oskar Blues~ Longm~ CO</code></pre>
+## 1 Special Re…    2210 NA        NA      30 &lt;NA&gt;  16    Cedar Creek… Seven… TX   
+## 2 Kilt Lifte…    1635  0.06     21     161 &lt;NA&gt;  12    Four Peaks … Tempe  AZ   
+## 3 OktoberFie…    2527  0.053    27      67 &lt;NA&gt;  12    Freetail Br… San A… TX   
+## 4 The CROWLE…    1796 NA        NA     167 &lt;NA&gt;  32    Oskar Blues… Longm… CO   
+## 5 CAN&#39;D AID …    1790 NA        NA     167 &lt;NA&gt;  12    Oskar Blues… Longm… CO</code></pre>
 <pre class="r"><code>RemovedBrews &lt;- Brewdata %&gt;% filter(is.na(Style))
 Brewdata &lt;- Brewdata %&gt;% filter(!is.na(Style))
 

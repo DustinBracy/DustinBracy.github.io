@@ -320,7 +320,7 @@ We would like to express our sincere gratitude to Dr. Jacob Turner (SMU) for exc
 ```{r Feature Engineering, warning=FALSE}
 
 # read in 'Bank Additional Full' file
-bankfull = read.csv("./data/bank-additional-full.csv",header = TRUE, sep = ";")
+bankfull = read.csv("./data/bank-additional-full.csv",header = TRUE, sep = ";", stringsAsFactors = TRUE)
 
 # convert "unknown" values to NA and view percentage of missing values
 bankfull[bankfull == "unknown"] <- NA 
