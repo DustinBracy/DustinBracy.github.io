@@ -374,7 +374,7 @@ IPA.Ales$type <- as.factor(IPA.Ales$type)
 
 ```
 
-``` {r KNN model}
+``` {r KNN model, cache=TRUE}
 
 set.seed(100)
 splitPerc = .7
